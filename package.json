@@ -8,10 +8,17 @@
     "type":       "MIT",
     "url":        "https://raw.github.com/matthewrobb/six/master/LICENSE"
   }],
+  "main" : "./lib/six",
+  "bin": {
+    "sake": "./bin/sake"
+  },
   "homepage":     "http://sixlang.org",
   "bugs":         "https://github.com/matthewrobb/six/issues",
   "repository":   {
     "type": "git",
     "url": "git://github.com/matthewrobb/six.git"
+  },
+  "dependencies": {
+    "sake": ""
   }
 }
