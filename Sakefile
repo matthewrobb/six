@@ -1,3 +1,9 @@
-task("default", function(){
-	console.log("Please specify a task.");
+task("default", function(t){
+  console.log("Please specify a task.");
+  t.done();
+});
+
+task("build", function(t){
+
+  t.done()
 });
