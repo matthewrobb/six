@@ -1,9 +1,18 @@
-task("default", function(t){
-  console.log("Please specify a task.");
+task('default', (t) => {
+  console.log('Please specify a task.');
   t.done();
 });
 
-task("build", function(t){
+task('test', (t) => {
+  sh('node node_modules/mocha/bin/mocha', function(err, result){
+    console.log(result);
+    t.done();
+  });
+});
 
-  t.done()
+task('compile', (t) => {
+  sh('node bin/six -co ./lib ./src', function(err, result){
+    console.log(result);
+    t.done();
+  });
 });

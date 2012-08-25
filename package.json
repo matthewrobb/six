@@ -22,7 +22,8 @@
     "sake"             : "",
     "dustjs-linkedin"  : "",
     "node-js-beautify" : "",
-    "commander": ""
+    "commander"        : "",
+    "watch"            : ""
   },
   "devDependencies" : {
     "mocha"  : "",

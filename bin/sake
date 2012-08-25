@@ -2,6 +2,20 @@
 
 var path = require('path');
 var fs = require('fs');
-var lib = path.join(path.dirname(fs.realpathSync(__filename)), '../node_modules');
+var readFileSync = fs.readFileSync;
 
-require(lib + '/sake/node_modules/sake/cli-app').run();
+var lib = path.join(path.dirname(fs.realpathSync(__filename)), '../lib');
+var Sakefile = fs.realpathSync('./Sakefile');
+
+var six = require(lib + '/six');
+var cli = require(lib + '/../node_modules/sake/node_modules/sake/cli-app');
+
+fs.readFileSync = function(file, enc){
+  var ret = readFileSync(file, enc);
+  if(file === Sakefile){
+    ret = six.compile(ret);
+  }
+  return ret;
+}
+
+cli.run();

@@ -1,66 +1,67 @@
-module fs = "fs";
+module six {
 
-module harmonizr = "./harmonizr";
-module esprima = "./esprima";
+  module fs = "fs";
 
-module dust = "dustjs-linkedin";
-module Beautifier = "node-js-beautify";
+  module harmonizr = "./harmonizr";
+  module esprima = "./esprima";
 
-var parse = esprima.parse
-var Syntax = esprima.Syntax;
+  module dust = "dustjs-linkedin";
+  module Beautifier = "node-js-beautify";
 
-function compile(src, options) {
-  src = processClasses(src, options);
-  src = harmonizr.harmonize(src, options);
-  return src;
-}
+  var parse = esprima.parse
+  var Syntax = esprima.Syntax;
 
-dust.compileFn(fs.readFileSync(__dirname + "/templates/Program.tpl").toString(), "Program");
-dust.compileFn(fs.readFileSync(__dirname + "/templates/ClassDeclaration.tpl").toString(), "ClassDeclaration");
+  export var harmonize = harmonizr.harmonize;
+  export var modulesStyles = harmonizr.harmonize;
 
-function processClasses(src, options) {
-  var ast = parse(src, { loc: true });
-  var lines = src.split('\n');
-
-  /*ast.print = function(a,s,d,p) { return console.dir(p); };
-
-  ast.extract = function(chunk, context, bodies, params) {
-    //console.log(params.target);
-    //chunk.write(extract(lines, params.target.loc));
+  export function compile(src, options) {
+    options = options || { style: 'node' }
+    src = processClasses(src, options);
+    src = harmonize(src, options);
+    return src;
   }
 
-  dust.render("Program", ast, function(err, out) {
-    var b = new Beautifier();
-    console.log(b.beautify_js(out));
-  });*/
+  dust.compileFn(fs.readFileSync(__dirname + "/templates/Program.tpl").toString(), "Program");
+  dust.compileFn(fs.readFileSync(__dirname + "/templates/ClassDeclaration.tpl").toString(), "ClassDeclaration");
 
-  return src;
-}
+  function processClasses(src, options) {
+    var ast = parse(src, { loc: true });
+    //    var lines = src.split('\n');
 
-function extract(lines, loc) {
-  var firstLine = loc.start.line - 1;
-  var lastLine = loc.end.line - 1;
+    /*ast.print = function(a,s,d,p) { return console.dir(p); };
 
-  if(firstLine === lastLine){
-    return lines[firstLine].substring(loc.start.column, loc.end.column);
-  } else {
-
-    var bits = [];
-
-    bits.push(lines[firstLine].substr(loc.start.column));
-
-    for(var x = firstLine+1; x < lastLine; x++ ){
-      bits.push(lines[x]);
+    ast.extract = function(chunk, context, bodies, params) {
+      //console.log(params.target);
+      //chunk.write(extract(lines, params.target.loc));
     }
 
-    bits.push(lines[lastLine].substr(0, loc.end.column));
+    dust.render("Program", ast, function(err, out) {
+      var b = new Beautifier();
+      console.log(b.beautify_js(out));
+    });*/
 
-    return bits.join("\n").trim();
-  }    
+    return src;
+  }
+
+  function extract(lines, loc) {
+    var firstLine = loc.start.line - 1;
+    var lastLine = loc.end.line - 1;
+
+    if(firstLine === lastLine){
+      return lines[firstLine].substring(loc.start.column, loc.end.column);
+    } else {
+
+      var bits = [];
+
+      bits.push(lines[firstLine].substr(loc.start.column));
+
+      for(var x = firstLine+1; x < lastLine; x++ ){
+        bits.push(lines[x]);
+      }
+
+      bits.push(lines[lastLine].substr(0, loc.end.column));
+
+      return bits.join("\n").trim();
+    }    
+  }
 }
-
-module.exports = {
-  harmonize: harmonizr.harmonize,
-  moduleStyles: harmonizr.moduleStyles,
-  compile: compile
-};
