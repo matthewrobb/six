@@ -10,7 +10,8 @@
   }],
   "main"            : "./lib/six",
   "bin": {
-    "sake"            : "./bin/sake"
+    "sake"            : "./bin/sake",
+    "six"             : "./bin/six"
   },
   "homepage"        : "http://sixlang.org",
   "bugs"            : "https://github.com/matthewrobb/six/issues",
@@ -20,8 +21,6 @@
   },
   "dependencies": {
     "sake"             : "",
-    "dustjs-linkedin"  : "",
-    "node-js-beautify" : "",
     "commander"        : "",
     "watch"            : ""
   },

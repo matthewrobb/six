@@ -1,18 +1,18 @@
-var child_process = require('child_process'), exec = child_process.exec;
+import { exec } from 'child_process';
 
-var fs = require('fs');
-var path = require('path');
+module fs = 'fs';
+module path = 'path';
 
-var cmd = require('commander');
-var watch = require('watch');
+module cmd = 'commander';
+module watch = 'watch';
 
-var six = require('./six');
+module six = './six';
 
 var exists = fs.exists || path.exists;
 
 var sources;
 
-function run() {
+export function run() {
 
   cmd
     .version('0.0.1')
@@ -23,24 +23,24 @@ function run() {
 
   sources = cmd.args;
 
-  sources.forEach(function(source) {
+  sources.forEach(source => {
     compilePath(source, path.normalize(source))
   })
 
 }
 
 function compilePath(source, base) {
-  fs.stat(source, function(err, stats) {
+  fs.stat(source, (err, stats) => {
     if ( stats.isDirectory() ) {
       if( cmd.watch ) watchDir(source, base);
-      fs.readdir(source, function(err, files) {
-        files.forEach(function(file) {
+      fs.readdir(source, (err, files) => {
+        files.forEach(file => {
           compilePath(path.join(source, file), base)
         })
       })
     } else if ( path.extname(source) === '.js' ) {
       if ( cmd.watch ) watchFile(source, base);
-      fs.readFile(source, function(err, code) {
+      fs.readFile(source, (err, code) => {
         compileScript(source, code.toString(), base)
       })
     }
@@ -50,13 +50,13 @@ function compilePath(source, base) {
 function compileScript(file, input, base) {
   if ( cmd.compile ) {
     var module = path.basename(file).replace(path.extname(file), '');
-    writeJs(file, six.compile(input, { module: module, style: 'node' }), base);
+    writeJs(file, six.compile(input, { module, style: 'node' }), base);
   }
 }
 
 function watchDir(source, base) {
-  watch.walk(source, function(err, files) {
-    Object.keys(files).forEach(function(file) {
+  watch.walk(source, (err, files) => {
+    Object.keys(files).forEach(file => {
       if ( path.extname(file) === '.js' ) {
         watchFile(file, source);
       }
@@ -67,10 +67,10 @@ function watchDir(source, base) {
 function watchFile(source, base) {
   var prevStats = null;
   var compileTimeout = null;
-  var compile = function() {
+  var compile = () => {
     clearTimeout(compileTimeout);
-    compileTimeout = wait(25, function() {
-      fs.stat(source, function(err, stats) {
+    compileTimeout = wait(25, () => {
+      fs.stat(source, (err, stats) => {
         if (
           prevStats &&
           stats.size === prevStats.size &&
@@ -78,7 +78,7 @@ function watchFile(source, base) {
 
         prevStats = stats;
 
-        fs.readFile(source, function(err, code) {
+        fs.readFile(source, (err, code) => {
           compileScript(source, code.toString(), base);
           rewatch();
         });
@@ -87,7 +87,7 @@ function watchFile(source, base) {
     });
   }
   var watcher = fs.watch(source, compile);
-  var rewatch = function() {
+  var rewatch = () => {
     if ( watcher ) watcher.close();
     watcher = fs.watch(source, compile);
   }
@@ -108,12 +108,12 @@ function outputPath(source, base) {
 function writeJs(source, js, base) {
   var jsPath = outputPath(source, base);
   var jsDir = path.dirname(jsPath);
-  var compile = function() {
-    fs.writeFile(jsPath, js, function(err) {
+  var compile = () => {
+    fs.writeFile(jsPath, js, err => {
       if ( cmd.compile ) timeLog('compiled ' + source)
     })
   }
-  exists(jsDir, function(itExists) {
+  exists(jsDir, itExists => {
     if ( itExists ) compile();
     else exec('mkdir -p ' + jsDir, compile);
   })
@@ -126,8 +126,3 @@ function timeLog(message) {
 
 
 
-
-
-module.exports = {
-  run: run
-};
