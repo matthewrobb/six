@@ -27,6 +27,7 @@
   "devDependencies" : {
     "mocha"  : "",
     "chai"   : "",
-    "should" : ""
+    "should" : "",
+    "cover"  : ""
   }
 }

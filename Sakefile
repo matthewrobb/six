@@ -1,18 +1,33 @@
-task('default', (t) => {
-  console.log('Please specify a task.');
-  t.done();
-});
 
-task('test', (t) => {
-  sh('node node_modules/mocha/bin/mocha', function(err, result){
-    console.log(result);
-    t.done();
-  });
-});
+import { exec } from "child_process";
 
-task('compile', (t) => {
-  sh('node bin/six -co ./lib ./src', function(err, result){
-    console.log(result);
-    t.done();
-  });
-});
+var launch = (cmd, callback) => {
+  var child = exec(cmd, callback)
+  child.stdout.pipe(process.stdout)
+  child.stderr.pipe(process.stderr)
+}
+
+task('default', t => {
+  console.log('Please specify a task.')
+  t.done()
+})
+
+task('test', t => {
+  launch('node node_modules/mocha/bin/mocha', () => t.done())
+})
+
+task('compile', t => {
+  launch('node bin/six -co ./lib ./src', () => t.done())
+})
+
+task('cover', t => {
+  launch('node node_modules/cover/bin/cover run node_modules/mocha/bin/_mocha', () => {
+    launch('node node_modules/cover/bin/cover report html')
+    launch('node node_modules/cover/bin/cover report cli')
+    t.done()
+  })
+})
+
+task('watch', t => {
+  launch('node bin/six -cwo ./lib ./src', () => t.done())
+})

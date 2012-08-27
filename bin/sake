@@ -1,21 +1,17 @@
 #!/usr/bin/env node
 
-var path = require('path');
-var fs = require('fs');
-var readFileSync = fs.readFileSync;
+var path = require('path')
+var fs = require('fs')
+var readFileSync = fs.readFileSync
 
-var lib = path.join(path.dirname(fs.realpathSync(__filename)), '../lib');
-var Sakefile = fs.realpathSync('./Sakefile');
+var lib = path.join(path.dirname(fs.realpathSync(__filename)), '../lib')
+var tasks = fs.realpathSync('./Sakefile')
 
-var six = require(lib + '/six');
-var cli = require(lib + '/../node_modules/sake/node_modules/sake/cli-app');
+var six = require(lib + '/six')
 
-fs.readFileSync = function(file, enc){
+fs.readFileSync = function(file, enc) {
   var ret = readFileSync(file, enc);
-  if(file === Sakefile){
-    ret = six.compile(ret);
-  }
-  return ret;
+  return file === tasks ? six.compile(ret, {style: 'node', module: 'Sakefile'}) : ret
 }
 
-cli.run();
+require(lib + '/../node_modules/sake/node_modules/sake/cli-app').run()
