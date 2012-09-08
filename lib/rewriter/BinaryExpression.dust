@@ -1,0 +1,19 @@
+{#pick key="operator"}
+
+    {:is}
+
+        (function ( x, y ) {
+            return ( x === y ) ? ( x !== 0 || 1/x === 1/y ) : ( x !== x && y !==y )
+        })( {#raw child=left /}, {#node src=right /} )
+
+    {:isnt}
+
+        !(function ( x, y ) {
+            return ( x === y ) ? ( x !== 0 || 1/x === 1/y ) : ( x !== x && y !==y )
+        })( {#raw child=left /}, {#node src=right /} )
+
+    {:else}
+
+        {#node src=left /} {operator} {#node src=right /}
+
+{/pick}

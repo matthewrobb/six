@@ -2,16 +2,6 @@
 
 var path = require('path')
 var fs = require('fs')
-var readFileSync = fs.readFileSync
-
 var lib = path.join(path.dirname(fs.realpathSync(__filename)), '../lib')
-var tasks = fs.realpathSync('./Sakefile')
 
-var six = require(lib + '/six')
-
-fs.readFileSync = function(file, enc) {
-  var ret = readFileSync(file, enc);
-  return file === tasks ? six.compile(ret, {style: 'node', module: 'Sakefile'}) : ret
-}
-
-require(lib + '/../node_modules/sake/node_modules/sake/cli-app').run()
+require(lib + "/sake").run()

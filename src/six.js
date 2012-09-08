@@ -1,16 +1,35 @@
-module fs = "fs";
 
-module harmonizr = "./harmonizr";
-module esprima = "./esprima";
+var fs = require("fs")
+var path = require("path")
 
-var parse = esprima.parse;
-var Syntax = esprima.Syntax;
+var harmonizr = require("./harmonizr")
+require("./es6")
 
-export var harmonize = harmonizr.harmonize;
-export var modulesStyles = harmonizr.modulesStyles;
+var rewrite = require("./rewriter").rewrite
 
-export var compile = (src, options) => {
-  options = options || { style: 'node' }
-  src = harmonize(src, options);
-  return src;
+var harmonize = exports.harmonize = harmonizr.harmonize;
+var moduleStyles = exports.modulesStyles = harmonizr.modulesStyles;
+
+var run = exports.run = (code, options) => {
+  var mainModule = require.main
+
+  if(!options) options = {}
+
+  mainModule.filename = process.argv[1] = options.filename ? fs.realpathSync(options.filename) : '.'
+  mainModule.moduleCache && (mainModule.moduleCache = {})
+  mainModule.paths = require('module')._nodeModulePaths(path.dirname(fs.realpathSync(options.filename)))
+
+  if (path.extname(mainModule.filename) !== '.js' || require.extensions) {
+    mainModule._compile(compile(code, options), mainModule.filename)
+  } else {
+    mainModule._compile(code, mainModule.filename)
+  }
 }
+
+function compile (src, options, callback) {
+  src = harmonize(src, options)
+  rewrite(src)
+  return src
+}
+
+exports.compile = compile

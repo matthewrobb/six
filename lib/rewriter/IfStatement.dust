@@ -1,0 +1,2 @@
+if ( {#node src=test/} ) {#node src=consequent/}
+{?alternate} else {#node src=alternate/}{/alternate}

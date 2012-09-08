@@ -1,0 +1,206 @@
+{
+	"Programs": [],
+	"Functions": [],
+	"Statements": [],
+	"Declarations": [],
+	"Expressions": [],
+	"Patterns": [],
+	"Clauses": []
+}
+
+
+"Program"
+
+Statements
+	"EmptyStatement"
+	"BlockStatement"
+	"ExpressionStatement"
+	"IfStatement"
+	"LabeledStatement"
+	"BreakStatement"
+	"ContinueStatement"
+	"WithStatement"
+	"SwitchStatement"
+	"ReturnStatement"
+	"ThrowStatement"
+	"TryStatement"
+	"WhileStatement"
+	"DoWhileStatement"
+	"ForStatement"
+	"ForInStatement"
+	"LetStatement"
+
+Declarations
+	"FunctionDeclaration"
+	"VariableDeclaration"
+	"VariableDeclarator"
+
+Expressions
+	"ThisExpression"
+	"ArrayExpression"
+	"ObjectExpression"
+	"FunctionExpression"
+	"SequenceExpression"
+	"UnaryExpression"
+	"BinaryExpression"
+	"AssignmentExpression"
+	"UpdateExpression"
+	"LogicalExpression"
+	"ConditionalExpression"
+	"NewExpression"
+	"CallExpression"
+	"MemberExpression"
+	ComprehensionExpression
+	GeneratorExpression
+	"LetExpression"
+
+Patterns
+	"ObjectPattern"
+	"ArrayPattern"
+
+Clauses
+	"SwitchCase"
+	"SwitchClause"
+	ComprehensionBlock
+
+Misc
+	"Identifier"
+	"Literal"
+	"Property"
+
+Additions
+	"ArrowFunctionExpression"
+
+	"ClassBody"
+	"ClassDeclaration"
+	"ClassExpression"
+	"MethodDefinition"
+	"ClassHeritage"
+
+	"ModuleDeclaration"
+	"ExportDeclaration"
+	"ExportSpecifier"
+	"ExportSpecifierSet"
+	"ImportDeclaration"
+	"ImportSpecifier"
+
+	"Path"
+
+	"QuasiElement"
+	"QuasiLiteral"
+	"TaggedQuasiExpression"
+
+
+	"ForOfStatement"
+
+
+
+
+
+node
+	type
+	loc
+
+Loc
+	source
+	start
+	end
+
+Position
+	line
+	column
+
+Programs
+	type
+	body
+
+Functions
+	id
+	params
+	defaults
+	rest
+	body
+	generator
+	expression
+
+Statements
+	type
+	body
+	expression
+	test
+	consequent
+	alternate
+	label
+	object
+	cases
+	discriminant
+	lexical
+	argument
+	handlers
+	finalizer
+	init
+	update
+	left
+	right
+	each*
+	head
+
+Declarations
+	type
+	id
+	params
+	defaults
+	rest
+	body
+	generator
+	expression
+	declarations
+	kind
+
+Expressions
+	type
+	elements
+	properties
+		key
+		value
+		kind
+	expressions
+	operator
+	prefix
+	left
+	right
+	argument
+	test
+	alternate
+	consequent
+	callee
+	arguments
+	object
+	property
+	computed
+	body
+	blocks
+	filter
+	head
+
+Patterns
+	type
+	properties
+	elements
+
+Clauses
+	type
+	test
+	consequent
+	param
+	guard
+	body
+	left
+	right
+	each
+
+Misc
+	type
+	value
+
+
