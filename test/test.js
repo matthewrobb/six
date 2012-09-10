@@ -2,7 +2,7 @@ var six = require('../lib/six');
 
 describe('six', function() {
 
-  describe('modules, imports, and exports', function() {
+  /*describe('modules, imports, and exports', function() {
 
     it('turns module declarations into AMD modules', function() {
       var src      = 'module m {}';
@@ -251,7 +251,7 @@ describe('six', function() {
       compile(src, expected, { style: 'amd' });
     });
 
-  });
+  });*/
 
   describe('shorthand properties', function() {
 

@@ -1,5 +1,5 @@
 
-import { exec } from "child_process";
+var exec = require("child_process").exec
 
 var launch = (cmd, callback) => {
   var child = exec(cmd, callback)
@@ -7,27 +7,21 @@ var launch = (cmd, callback) => {
   child.stderr.pipe(process.stderr)
 }
 
-task('default', t => {
-  console.log('Please specify a task.')
-  t.done()
+task('test', () => {
+  launch('node node_modules/mocha/bin/mocha')
 })
 
-task('test', t => {
-  launch('node node_modules/mocha/bin/mocha', () => t.done())
+task('compile', () => {
+  launch('node bin/six -co ./lib ./src')
 })
 
-task('compile', t => {
-  launch('node bin/six -co ./lib ./src', () => t.done())
-})
-
-task('cover', t => {
+task('cover', () => {
   launch('node node_modules/cover/bin/cover run node_modules/mocha/bin/_mocha', () => {
     launch('node node_modules/cover/bin/cover report html')
     launch('node node_modules/cover/bin/cover report cli')
-    t.done()
   })
 })
 
-task('watch', t => {
-  launch('node bin/six -cwo ./lib ./src', () => t.done())
+task('watch', () => {
+  launch('node bin/six -cwo ./lib ./src')
 })
