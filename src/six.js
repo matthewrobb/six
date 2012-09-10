@@ -28,7 +28,7 @@ var run = exports.run = (code, options) => {
 
 function compile (src, options, callback) {
   src = harmonize(src, options)
-  rewrite(src)
+  src = rewrite(src)
   return src
 }
 

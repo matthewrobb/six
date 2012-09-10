@@ -49,10 +49,6 @@ Object.define(Tree.prototype, {
       get children() { return children.slice(0) }
     })
 
-    if(node.key === "root") {
-      //console.log(node.lines)
-    }
-
     return node
   },
 
@@ -69,55 +65,15 @@ Object.define(Tree.prototype, {
     })
   },
 
-  get loco () {
-    var start, end
-
-    if (this.type !== "NodeSet") {
-      start = this.ast.loc.start
-      end = this.ast.loc.end
-    } else if (this.ast.length) {
-      start = this.ast[0].loc.start
-      end = this.ast[this.ast.length -1].loc.end
-    }
-
-    return { start, end }
-  },
-
   get loc () {
-    var start = {
-      line: (this.ast.loc.start.line - this.parent.ast.loc.start.line) + 1,
-      column: this.ast.loc.start.column
-    }
-
-    if (this.ast.loc.start.line === this.parent.ast.loc.start.line) {
-      start.column -= this.parent.ast.loc.start.column
-    }
-
-    var end = {
-      line: (this.ast.loc.end.line - this.parent.ast.loc.start.line) + 1,
-      column: this.ast.loc.end.column
-    }
-
-    if (this.ast.loc.end.line === this.parent.ast.loc.start.line) {
-      end.column -= this.parent.ast.loc.start.column
-    }
-
-    return { start, end }
+    return this.ast.loc
   },
 
   get lines () {
-    return extracttoo(this.root.lines, this.ast.loc.start, this.ast.loc.end)
-  },
-
-  get raw () {
-    return this.lines.join('\n')
-  },
-
-  get lineso () {
     return this.source.split('\n')
   },
 
-  get rawo () {
+  get raw () {
     return extract(this.lines, this.loc.start, this.loc.end)
   },
 
@@ -134,10 +90,13 @@ Object.define(Tree.prototype, {
   },
 
   get next () {
-    var parent = this.parent
-    var index = parent.children.indexOf(this)
-    var next = parent.children[index + 1]
-    return next
+    var siblings = this.parent.children
+    return siblings[siblings.indexOf(this) + 1]
+  },
+
+  get prev () {
+    var siblings = this.parent.children
+    return siblings[siblings.indexOf(this) - 1]
   },
 
   get last () {
@@ -156,18 +115,6 @@ Object.define(Tree.prototype, {
   }
 
 })
-
-function extracttoo(lines, from, to) {
-  var ret = []
-  if (from.line === to.line) {
-      ret.push(lines[from.line - 1].substring(from.column, to.column))
-  } else {
-      ret.push(lines[from.line - 1].substring(from.column))
-      for (var lineno = from.line; lineno < to.line - 1; lineno++) ret.push(lines[lineno])
-      ret.push(lines[to.line - 1].substring(0, to.column))
-  }
-  return ret
-}
 
 function extract(lines, from, to) {
   var ret = []

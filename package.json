@@ -20,9 +20,6 @@
     "url"             : "git://github.com/matthewrobb/six.git"
   },
   "dependencies": {
-    "sake"             : "",
-    "commander"        : "",
-    "watch"            : ""
   },
   "devDependencies" : {
     "mocha"  : "",
