@@ -1,0 +1,106 @@
+// `sake` is a simplified version of [Make](http://www.gnu.org/software/make/)
+// ([Rake](http://rake.rubyforge.org/), [Jake](http://github.com/280north/jake))
+// for Six. You define tasks with names and descriptions in a Sakefile,
+// and can call them from the command line, or invoke them from other tasks.
+//
+// Running `sake` with no arguments will print out a list of all the tasks in the
+// current directory's Sakefile.
+
+// External dependencies.
+var fs = require('fs')
+var path = require('path')
+var helpers = require('./helpers')
+var optparse = require('./optparse')
+var Six = require('./six')
+
+var existsSync = fs.existsSync || path.existsSync
+
+// Keep track of the list of defined tasks, the accepted options, and so on.
+var tasks = {}
+var options = {}
+var switches = []
+var oparse = null
+
+// Mixin the top-level Sake functions for Sakefiles to use directly.
+helpers.extend(global, {
+
+  // Define a Sake task with a short name, an optional sentence description,
+  // and the function to run as the action itself.
+  task: function(name, description, action) {
+    var _ref;
+    if (!action) {
+      _ref = [description, action], action = _ref[0], description = _ref[1];
+    }
+    return tasks[name] = {
+      name: name,
+      description: description,
+      action: action
+    }
+  },
+  // Define an option that the Sakefile accepts. The parsed options hash,
+  // containing all of the command-line options passed, will be made available
+  // as the first argument to the action.
+  option: function(letter, flag, description) {
+    return switches.push([letter, flag, description])
+  },
+  // Invoke another task in the current Sakefile.
+  invoke: function(name) {
+    if (!tasks[name]) missingTask(name)
+    return tasks[name].action(options)
+  }
+})
+
+// Run `sake`. Executes all of the tasks you pass, in order. Note that Node's
+// asynchrony may cause tasks to execute in a different order than you'd expect.
+// If no tasks are passed, print the help screen. Keep a reference to the
+// original directory name, when running Sake tasks from subdirectories.
+exports.run = function(){
+  global.__originalDirname = fs.realpathSync('.')
+  process.chdir(sakefileDirectory(__originalDirname))
+  var args = process.argv.slice(2)
+  Six.run(fs.readFileSync('Sakefile').toString(), {filename: 'Sakefile'})
+  oparse = new optparse.OptionParser(switches)
+  if (!args.length) return printTasks()
+  try {
+    var options = oparse.parse(args)
+  } catch (e) {
+    return fatalError(e + "")
+  }
+
+  options.arguments.forEach(function(arg){
+    invoke(arg)
+  });
+}
+
+// Display the list of Sake tasks in a format similar to `rake -T`
+var printTasks = function() {
+  var relative = path.relative || path.resolve
+  var sakefilePath = path.join(relative(__originalDirname, process.cwd()), 'Sakefile')
+  console.log(sakefilePath + " defines the following tasks:\n")
+  Object.keys(tasks).forEach(function(name){
+    var task = tasks[name]
+    var spaces = 20 - name.length
+    spaces = (spaces > 0) ? Array(spaces + 1).join(' ') : ''
+    var desc = task.description ? '# ' + task.description : ''
+    console.log("sake " + name + spaces + " " + desc)
+  })
+  if (switches.length) console.log(oparse.help())
+}
+
+// Print an error and exit when attempting to use an invalid task/option.
+var fatalError = function(message) {
+  console.error(message + '\n')
+  console.log('To see a list of all tasks/options, run "sake"')
+  process.exit(1)
+}
+
+var missingTask = function(task) { fatalError("No such task: " + task) }
+
+// When `sake` is invoked, search in the current and all parent directories
+// to find the relevant Sakefile.
+var sakefileDirectory = function(dir) {
+  if (existsSync(path.join(dir, 'Sakefile'))) return dir
+  var parent = path.normalize(path.join(dir), '..')
+  if (parent !== dir) return sakefileDirectory(parent)
+  throw new Error("Sakefile not found in " + process.cwd())
+}
