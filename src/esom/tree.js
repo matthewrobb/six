@@ -15,12 +15,6 @@ function Tree (source) {
   return this.create({ ast, key: 'root', type: 'Node' })
 }
 
-module.exports = Tree
-
-Object.define(Tree, {
-  create(src) new this(src)
-})
-
 Object.define(Tree.prototype, {
 
   create (base) {
@@ -63,56 +57,13 @@ Object.define(Tree.prototype, {
       }
 
     })
-  },
-
-  get loc () {
-    return this.ast.loc
-  },
-
-  get lines () {
-    return this.source.split('\n')
-  },
-
-  get raw () {
-    return extract(this.lines, this.loc.start, this.loc.end)
-  },
-
-  get isRoot() {
-    return this.parent === this.root
-  },
-
-  get path () {
-    return this.isRoot ? "" : this.parent.path + "." + this.key
-  },
-
-  get first () {
-    return this.children[ 0 ]
-  },
-
-  get next () {
-    var siblings = this.parent.children
-    return siblings[siblings.indexOf(this) + 1]
-  },
-
-  get prev () {
-    var siblings = this.parent.children
-    return siblings[siblings.indexOf(this) - 1]
-  },
-
-  get last () {
-    return this.children[ this.children.length -1 ]
-  },
-
-  get deepest () {
-    var deepest = []
-
-    this.children.forEach(child => {
-      !child.children.length ? deepest.push(child)
-        : child.deepest.forEach( child => deepest.push(child))
-    })
-
-    return deepest
   }
+
+  , loc()    this.ast.loc
+  , lines()  this.source.split('\n')
+  , raw()    extract(this.lines(), this.loc().start, this.loc().end)
+  , isRoot() this.parent === this.root
+  , path()   this.isRoot() ? "" : this.parent.path + "." + this.key
 
 })
 
@@ -127,3 +78,11 @@ function extract(lines, from, to) {
   }
   return ret.join('\n')
 }
+
+Object.define(Tree, {
+  create(src) new this(src)
+})
+
+Object.define(Tree.prototype, require("./trav").Traversal)
+
+exports.Tree = Tree
