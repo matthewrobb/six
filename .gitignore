@@ -1,2 +1,5 @@
+/.coverage_data
+/cover_html
 /node_modules
+/*.sublime-*
 .DS_Store
