@@ -3,19 +3,19 @@ var esprima = require("./esprima");
 var parse = esprima.parse;
 var Syntax = esprima.Syntax;
 
-function Tree (source) {
-  var ast = parse(source, { loc: true })
+class Tree {
 
-  Object.define(this, {
-    root: this,
-    get source() { return source },
-    get ast() { return ast }
-  })
+  constructor(source) {
+    var ast = parse(source, { loc: true })
 
-  return this.create({ ast, key: 'root', type: 'Node' })
-}
+    Object.define(this, {
+      root: this,
+      get source() { return source },
+      get ast() { return ast }
+    })
 
-Object.define(Tree.prototype, {
+    return this.create({ ast, key: 'root', type: 'Node' })
+  }
 
   create (base) {
     var node = Object.create(this.root)
@@ -44,7 +44,7 @@ Object.define(Tree.prototype, {
     })
 
     return node
-  },
+  }
 
   climb (visit) {
     var node = this.ast
@@ -59,13 +59,13 @@ Object.define(Tree.prototype, {
     })
   }
 
-  , loc()    this.ast.loc
-  , lines()  this.source.split('\n')
-  , raw()    extract(this.lines(), this.loc().start, this.loc().end)
-  , isRoot() this.parent === this.root
-  , path()   this.isRoot() ? "" : this.parent.path + "." + this.key
+  loc() { return this.ast.loc }
+  lines() { return this.source.split('\n') }
+  raw() { return extract(this.lines(), this.loc().start, this.loc().end) }
+  isRoot() { return this.parent === this.root }
+  path() { return this.isRoot() ? "" : this.parent.path + "." + this.key }
 
-})
+}
 
 function extract(lines, from, to) {
   var ret = []
