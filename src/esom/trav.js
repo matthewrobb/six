@@ -14,10 +14,18 @@ var pseudoPat = "(?:\:(?!$)(?:[\w]+)(?:\((?:[\s\S]+)\))?)*"
 var attrPat = /^([\w]+)(?:(?:([*|^|$]?=)?(?!\]))(?:([0-9]+)(?=\]))?(?:['"]([\w]+)['"](?=\]))?(?:(true|false)(?=\]))?)?\]$/
 
 function parse(selector) {
-  return new query(queryMatch.exec(selector))
+  return new Query(queryMatch.exec(selector))
 }
 
-class query {
+class Query {
+
+  /*
+    1: Relative
+    2: Tag
+    3: Class
+    4: Attributes
+    5: Pseudos
+  */
 
   constructor(dir) {
     this.dir = dir
@@ -86,90 +94,6 @@ class query {
   }
 
 }
-
-/*Object.define(parse, {
-
-  query(dir) {
-    if (dir === null) return null
-
-    
-    
-    1: Relative
-    2: Tag
-    3: Class
-    4: Attributes
-    5: Pseudos
-
-    
-
-    this.dir = dir
-    this.ret = {}
-
-    this.relative()
-    this.key()
-    this.type()
-    this.properties()
-    this.pseudos()
-    
-    return this.ret
-  },
-
-  relative() {
-    switch ( this.dir[1] ) {
-      case ">": this.ret.child = true; break
-      case "+": this.ret.sibling = true; break
-    }
-  },
-
-  key() { if ( this.dir[2] ) this.ret.key = this.dir[2] },
-  type() { if ( this.dir[3] ) this.ret.type = this.dir[3] },
-
-  properties() {
-    if ( this.dir[4] ) {
-      this.ret.properties = []
-
-      this.dir[4].split("[").forEach(prop => {
-        if ( prop ) this.property(prop)
-      })
-    }
-  },
-
-  property(prop) {
-    var parts = attrPat.exec(prop)
-    var obj = {}
-
-    if ( parts && parts[1]) {
-      obj.property = parts[1]
-      if ( parts[2] ) {
-        obj.operation = parts[2]
-        if ( parts[3] ) obj.value = Number(parts[3])
-        else if ( parts[4] ) obj.value = parts[4]
-        else if ( parts[5] ) obj.value = Boolean(parts[5])
-      }
-      this.ret.properties.push(obj)
-    }
-  },
-
-  pseudos() {
-    var pat = /(?:\:([\w]+)(?:\(([\s\S]+)\))?)/g
-    var pat2 = /(?:\:([\w]+)(?:\(([\s\S]+)\))?)/
-    if ( this.dir[5] ) {
-      this.ret.pseudos = []
-      this.dir[5].match(pat).forEach(seg => {
-        var parts = pat2.exec(seg)
-        var obj = {}
-        if ( parts && parts[1] ) {
-          obj.pseudo = parts[1]
-          if ( parts[2] ) obj.argument = parts[2]
-          this.ret.pseudos.push(obj)
-        }
-      })
-    }
-  }
-
-})
-
-Object.define(parse.query.prototype, parse)*/
 
 var Traversal = {
 
