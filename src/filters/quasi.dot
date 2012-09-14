@@ -1,6 +1,6 @@
 "{{~ it.select('.QuasiElement') :child:index }}
-	{{= child.ast.value.raw }}
-	{{? it.select('expressions')[0].children[index] }}
-		" + {{= it.select('expressions')[0].children[index].compile() }} + "
-	{{?}}
+  {{= child.ast.value.raw }}
+  {{? it.select('expressions')[0] && it.select('expressions')[0].children[index] }}
+    " + {{= it.select('expressions')[0].children[index].compile() }} + "
+  {{?}}
 {{~}}"
