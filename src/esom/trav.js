@@ -1,42 +1,64 @@
 
-var queryPat = /^([A-Za-z]*)?(?:\.([A-Za-z]+))?((?:\[[\w]+(?:(?:([*|^|$]?=)?(?!\]))(?:[0-9]+(?=\]))?(?:['"][\w]+['"](?=\]))?(?:true|false(?=\]))?)?\])*)$/
+var queryPat = /((?:[\>|\+][\s]*)?(?=[\w|\.])(?:[A-Za-z]+)?(?:\.[A-Za-z]+)?(?:\[[\w]+(?:(?:[*|^|$]?=?(?!\]))(?:[0-9]+(?=\]))?(?:['"][\w]+['"](?=\]))?(?:true|false(?=\]))?)?\])*(?:\:(?!$)(?:[\w]+)(?:\((?:[\s\S]+)\))?)*)/g
+
+var queryMatch = /^(?:([\>|\+])[\s]*)?(?=[\w|\.])([A-Za-z]+)?(?:\.([A-Za-z]+))?((?:\[[\w]+(?:(?:[*|^|$]?=?(?!\]))(?:[0-9]+(?=\]))?(?:['"][\w]+['"](?=\]))?(?:true|false(?=\]))?)?\])*)((?:\:(?!$)(?:[\w]+)(?:\((?:[\s\S]+)\))?)*)$/
+
+//var queryPat2 = /(?:(?:[\s]*(?=[\S]))?([\+|>])?(?:[\s]*(?=[\S]))?([A-Za-z]+)?(?:\.([A-Za-z]+))?((?:\[[\w]+(?:(?:([*|^|$]?=)?(?!\]))(?:[0-9]+(?=\]))?(?:['"][\w]+['"](?=\]))?(?:true|false(?=\]))?)?\])*)((?:\:(?!$)(?:[\w]+)(?:\((?:[\s\S]+){1}\))?)*)[\s]*)/g
+
+var tagPat = "([A-Za-z]+)?"
+var classPat = "(?:\.([A-Za-z]+))?"
+var relPat = "(?:([\>|\+])[\s]*)?(?=[\w|\.])"
+var propPat = "(?:\[[\w]+(?:(?:[*|^|$]?=?(?!\]))(?:[0-9]+(?=\]))?(?:['\"][\w]+['\"](?=\]))?(?:true|false(?=\]))?)?\])*"
+var pseudoPat = "(?:\:(?!$)(?:[\w]+)(?:\((?:[\s\S]+)\))?)*"
+
 var attrPat = /^([\w]+)(?:(?:([*|^|$]?=)?(?!\]))(?:([0-9]+)(?=\]))?(?:['"]([\w]+)['"](?=\]))?(?:(true|false)(?=\]))?)?\]$/
 
-// SEL, SEL
-// SEL SEL
-// SEL > SEL
-
 function parse(selector) {
-  return new parse.query(queryPat.exec(selector))
+  return new Query(queryMatch.exec(selector))
 }
 
-Object.define(parse, {
+class Query {
 
-  query(dir) {
-    if (dir === null) return null
+  /*
+    1: Relative
+    2: Tag
+    3: Class
+    4: Attributes
+    5: Pseudos
+  */
 
+  constructor(dir) {
     this.dir = dir
     this.ret = {}
 
+    this.relative()
     this.key()
     this.type()
     this.properties()
-
+    this.pseudos()
+    
     return this.ret
-  },
+  }
 
-  key() { if ( this.dir[1] ) this.ret.key = this.dir[1] },
-  type() { if ( this.dir[2] ) this.ret.type = this.dir[2] },
+  relative() {
+    switch ( this.dir[1] ) {
+      case ">": this.ret.child = true; break
+      case "+": this.ret.sibling = true; break
+    }
+  }
+
+  key() { if ( this.dir[2] ) this.ret.key = this.dir[2] }
+  type() { if ( this.dir[3] ) this.ret.type = this.dir[3] }
 
   properties() {
-    if ( this.dir[3] ) {
+    if ( this.dir[4] ) {
       this.ret.properties = []
 
-      this.dir[3].split("[").forEach(prop => {
+      this.dir[4].split("[").forEach(prop => {
         if ( prop ) this.property(prop)
       })
     }
-  },
+  }
 
   property(prop) {
     var parts = attrPat.exec(prop)
@@ -54,28 +76,84 @@ Object.define(parse, {
     }
   }
 
-})
+  pseudos() {
+    var pat = /(?:\:([\w]+)(?:\(([\s\S]+)\))?)/g
+    var pat2 = /(?:\:([\w]+)(?:\(([\s\S]+)\))?)/
+    if ( this.dir[5] ) {
+      this.ret.pseudos = []
+      this.dir[5].match(pat).forEach(seg => {
+        var parts = pat2.exec(seg)
+        var obj = {}
+        if ( parts && parts[1] ) {
+          obj.pseudo = parts[1]
+          if ( parts[2] ) obj.argument = parts[2]
+          this.ret.pseudos.push(obj)
+        }
+      })
+    }
+  }
 
-Object.define(parse.query.prototype, parse)
+}
 
 var Traversal = {
 
-  select() {
+  select(query, frags) {
     var results = []
 
-    results.forEach.call(arguments, query => {
-      var dir = parse(query)
-      if ( dir ) this.children.forEach(child => {
-        child.matches(dir) && results.push(child)
-        child.select(query).forEach(child => results.push(child))
-      })
+    var sels = query.match(queryPat)
+    var sel = sels.pop()
+    var dir = parse(sel)
+    frags = frags || sels
+
+    this.children.forEach(child => {
+      if (dir.child && child.matches(dir)) {
+        var pass = true
+        var cur = child
+        frags.reverse().forEach(frag => {
+          var dir = parse(frag)
+          if (pass & dir.child) {
+            if (cur.parent.matches(dir)) {
+              cur = cur.parent
+            } else {
+              pass = false
+            }
+          }
+        })
+        if (pass) results.push(child)
+      } else if(child.matches(sel)) {
+        results.push(child)
+      }
+
+      child.select(sel, frags).forEach(child => results.push(child))
     })
+
+    void function enhance(sel) {
+      if (sels.length) {
+        sel = sels.pop()
+        results = results.filter(node => node.closest(sel) ? true : false)
+        enhance()
+      }
+    }()
 
     return results
   },
 
+  closest(selector) {
+    var dir = parse(selector)
+    var closest
+
+    if ( this.parent && this.parent !== this.root ){
+      closest = this.parent.matches(selector) ? this.parent : this.parent.closest(selector)
+    }
+
+    return closest
+  },
+
   matches(dir) {
     var match = true
+
+    if ( typeof dir === 'string' ) return this.matches(parse(dir))
+
     if ( match && dir.key && this.key !== dir.key ) match = false
     if ( match && dir.type && this.ast.type !== dir.type ) match = false
     if ( dir.properties ) dir.properties.forEach(prop => {
