@@ -31,7 +31,7 @@ class Person {
 
 // Quasi Literals / Template Strings
 var me = new Person("Matthew")
-print(`Hello, my name is ${person}.`)
+print(`Hello, my name is ${me.name}.`)
 
 // Object Property Shorthands
 var myObj = {
