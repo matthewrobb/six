@@ -3,11 +3,6 @@ var Tree = require("./esom/tree").Tree
 
 var filters = require("./filters").filters
 
-var uglify = require("uglify-js")
-
-var jsp = uglify.parser
-var pro = uglify.uglify
-
 function rewrite(src) {
   var program = Tree.create(src)
 
@@ -17,11 +12,10 @@ function rewrite(src) {
 
   program
     .select(".QuasiLiteral")
-    .forEach(node => node.compile = () => filters.quasi(node))
+    .forEach(node => node.compile = () => filters.quasi(node.context()))
 
   function ClassRewrite(node) {
     var ctx = node.context()
-    //node.compile = () => filters.class(node.context())
     var constructor
     var methods = []
 
@@ -53,10 +47,9 @@ function rewrite(src) {
       var argsc = args = args.compile()
     }
 
-
     node.compile = () => "this.constructor.__super__"
     callee.property.node.compile = () => callee.property.name + ".call"
-    if (args && args.node) args.node.compile = () => "this" + (args.node?"," + argsc:"")
+    if (args && args.node) args.node.compile = () => `this${ args.node ? "," + argsc : "" }`
   })
 
   program.select(".CallExpression > callee[name='super']").forEach(node => {
@@ -66,14 +59,30 @@ function rewrite(src) {
       args = args.compile()
     }
     
-    Call.node.compile = () => "this.constructor.__super__.constructor.call(this" + (args.node?"," + args:"") + ")"
+    Call.node.compile = () => `this.constructor.__super__.constructor.call(this ${ args.node ? "," + args:"" })`
 
   })
 
-	return pro.gen_code(pro.ast_lift_variables(jsp.parse(program.compile())), {
-    beautify: true,
-    indent_level: 2
+  program.select(".ForOfStatement").forEach(node => {
+    node.compile = () => {
+      var context = node.context()
+      var dec = context.left.matches(".VariableDeclaration[kind='var']")
+      var left = dec ? context.left.declarations.compile() : context.left.compile()
+      var right = context.right.compile()
+      var body = context.body.compile()
+
+      return `
+        ${ dec ? context.left.compile() + ";" : "" }
+        void function(_iterator){
+          try {
+            while (${ left } = _iterator.next()) ${ body }
+          } catch (e) { if (e !== StopIteration ) throw e }
+        }.call(this, ${ right }.iterator());
+      `
+    }
   })
+
+	return program.compile()
 }
 
 Object.define(Tree.prototype, {
@@ -99,29 +108,32 @@ Object.define(Tree.prototype, {
 
 })
 
-function Context(node) {
+class Context {
 
-  var stack = Object.create(node)
+  constructor(node) {
+    var stack = Object.create(node)
 
-  Object.define(stack, node.ast)
-  Object.define(stack, {
-    node,
-    get parent() {
-      if ( node.parent ) return node.parent.context()
-    }
-  })
-
-  if (stack.hasOwnProperty("loc")) delete stack['loc']
-
-  node.children.forEach(child => {
-    var ctx = child.context()
-    Object.defineProperty(stack, child.key, {
-      get() ctx,
-      enumerable: true
+    Object.define(stack, node.ast)
+    Object.define(stack, {
+      node,
+      get parent() {
+        if ( node.parent ) return node.parent.context()
+      }
     })
-  })
 
-  return stack
+    if (stack.hasOwnProperty("loc")) delete stack['loc']
+
+    node.children.forEach(child => {
+      var ctx = child.context()
+      Object.defineProperty(stack, child.key, {
+        get() ctx,
+        enumerable: true
+      })
+    })
+
+    return stack
+  }
+
 }
 
 exports.rewrite = rewrite
