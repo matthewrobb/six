@@ -6,7 +6,7 @@ var Syntax = esprima.Syntax;
 class Tree {
 
   constructor(source) {
-    var ast = parse(source, { loc: true })
+    var ast = parse(source, { range: true })
 
     Object.define(this, {
       root: this,
@@ -28,10 +28,7 @@ class Tree {
       
       if (child.type === 'Node' || (child.type === "NodeSet" && child.ast.length)) {
         if (child.type === "NodeSet") {
-          child.ast.loc = {
-            start: child.ast[0].loc.start,
-            end: child.ast[child.ast.length - 1].loc.end
-          }
+          child.ast.range = [child.ast[0].range[0], child.ast[child.ast.length - 1].range[1]]
         }
         children.push(node.create(child))
       }
@@ -51,7 +48,7 @@ class Tree {
     Object.keys(node).forEach(key => {
       var ast = node[key], type
 
-      if (ast && typeof ast === 'object') {
+      if (ast && typeof ast === 'object' && key !== "range") {
         type = (ast.type) ? "Node" : Array.isArray(ast) ? "NodeSet" : "Unknown"
         visit({ key, ast, type })
       }
@@ -59,24 +56,10 @@ class Tree {
     })
   }
 
-  loc() { return this.ast.loc }
-  lines() { return this.source.split('\n') }
-  raw() { return extract(this.lines(), this.loc().start, this.loc().end) }
+  raw() { return this.source.substring(this.ast.range[0], this.ast.range[1]) }
   isRoot() { return this.parent === this.root }
   path() { return this.isRoot() ? "" : this.parent.path + "." + this.key }
 
-}
-
-function extract(lines, from, to) {
-  var ret = []
-  if (from.line === to.line) {
-      ret.push(lines[from.line - 1].substring(from.column, to.column))
-  } else {
-      ret.push(lines[from.line - 1].substring(from.column))
-      for (var lineno = from.line; lineno < to.line - 1; lineno++) ret.push(lines[lineno])
-      ret.push(lines[to.line - 1].substring(0, to.column))
-  }
-  return ret.join('\n')
 }
 
 Object.define(Tree, {

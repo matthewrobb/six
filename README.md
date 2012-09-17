@@ -19,6 +19,20 @@ Six is a language super-set of JavaScript that enables new syntactic features fr
 // Egal Operators
 if(x isnt y && y is z) { }
 
+// Classes
+class Person {
+  constructor(name) {
+    this.name = name
+  }
+  greet() {
+    print("Hello, my name is " + this.name + ".")
+  }
+}
+
+// Quasi Literals / Template Strings
+var me = new Person("Matthew")
+print(`Hello, my name is ${me.name}.`)
+
 // Object Property Shorthands
 var myObj = {
 
@@ -31,7 +45,7 @@ var myObj = {
   concise( x ) x + 1,
 
   // Computed property names
-  [ func() ]: {}
+  [ getKeyName() ]: {}
 }
 
 // Default and Rest parameters
@@ -45,17 +59,14 @@ print(...x)
 var [ a, b ] = x
 var { c, d } = { c: 1, d: 2 }
 
-// Quasi Literals ( Template Strings )
-var person = "Matthew"
-print(`Hello ${person}`)
-
 // Iterators
+var stuff = ["shoes", "shirt", "shorts"]
+
+for(var thing of stuff) {
+  print(thing)
+}
 
 // Comprehensions
-
-// Generators
-
-// Classes
 
 // Modules
 
