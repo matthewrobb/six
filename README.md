@@ -10,6 +10,8 @@ six  &nbsp;*:::* &nbsp; JavaScript you can bet on.
 ##Elevator
 Six is a language super-set of JavaScript that enables new syntactic features from the 6th edition of ECMAScript to be used, through a transpiler, in your scripts today.
 
+WARNING: Still in a very early state, proceed with caution.
+
 ###Examples
 ```JavaScript
 
@@ -42,10 +44,7 @@ var myObj = {
   },
   
   // Implicit return, concise methods
-  concise( x ) x + 1,
-
-  // Computed property names
-  [ getKeyName() ]: {}
+  concise( x ) x + 1
 }
 
 // Default and Rest parameters
