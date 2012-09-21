@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Six</title>
+    <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="codemirror/codemirror.css">
+    <link rel="stylesheet" href="codemirror/theme/ambiance.css">
+    <style type="text/css">
+
+        #editor + .CodeMirror {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 0;
+          right: 50%;
+          font-size: 13px;
+        }
+
+        #result + .CodeMirror {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 50%;
+          right: 0;
+          font-size: 13px;
+        }
+
+        .CodeMirror-scroll {
+          height: 100%;
+          width: 100%;
+        }
+
+        .CodeMirror-gutter {
+          bottom: 0;
+        }
+
+    </style>
+  </head>
+  <body>
+
+    <textarea id="editor"></textarea>
+    <textarea id="result"></textarea>
+    <a href="https://github.com/matthewrobb/six"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <script src="codemirror/codemirror.js"></script>
+    <script src="codemirror/mode/javascript/javascript.js"></script>
+    <script src="js-beautify.js" type="text/javascript"></script>
+
+    <script src="../../extras/six.js" type="text/javascript"></script>
+
+    <script type="text/six">
+
+    var result = CodeMirror.fromTextArea(document.getElementById("result"), {
+      mode: "javascript",
+      theme: "ambiance",
+      lineNumbers: true,
+      matchBrackets: false,
+      tabMode: "indent",
+      indentUnit: "2",
+      readOnly: true
+    });
+
+    var editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+      mode: "javascript",
+      theme: "ambiance",
+      lineNumbers: true,
+      matchBrackets: true,
+      tabMode: "indent",
+      onChange: function(editor) {
+        var code = editor.getValue()
+        try {
+          code = Six.compile(code)
+          result.setValue(js_beautify(code))
+        } catch (e) {}
+      }
+    });
+
+  </script>
+  </body>
+</html>

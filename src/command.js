@@ -15,11 +15,6 @@ var spawn = child_process.spawn
 var exec = child_process.exec
 var EventEmitter = require('events').EventEmitter
 
-var uglify = require("uglify-js")
-
-var jsp = uglify.parser
-var pro = uglify.uglify
-
 var exists = fs.exists || path.exists
 
 // Allow CoffeeScript to emit Node.js events.
@@ -335,12 +330,6 @@ var outputPath = function(source, base) {
 var writeJs = function(source, js, base) {
   var jsPath = outputPath(source, base)
   var jsDir  = path.dirname(jsPath)
-
-  js = pro.ast_lift_variables(jsp.parse(js))
-  js = pro.gen_code(js, {
-    beautify: true,
-    indent_level: 2
-  })
 
   var compile = function(){
     if (js.length <= 0) js = ' '

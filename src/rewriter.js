@@ -7,6 +7,53 @@ function rewrite(src) {
   var program = Tree.create(src)
 
   program
+    .select(".VariableDeclarator > id.ObjectPattern")
+    .forEach(node => {
+
+      node.properties = () => {
+        var ctx = node.parent.context()
+        var props = []
+
+        ctx.id.properties.node.children.forEach(child => {
+          var prop = child.context()
+          var key = prop.key.compile()
+          var value = prop.value.compile()
+          props.push({ key, value })
+        })
+
+        return props
+      }
+
+      node.assemble = (init) => {
+        var ctx = node.parent.context()
+        var props = node.properties()
+        var result = ""
+
+        if (!ctx.init || !ctx.init.matches(".Identifier")) {
+          var first = props.shift()
+          result += `${first.key} = ${init}, `
+          props.push(first)
+          init = first.key
+        }
+
+        props = props.map((prop, index) => `${prop.key} = ${init}.${prop.value}`)
+
+        return `${result}${props.join(", ")}`
+      }
+
+      node.parent.compile = () => node.assemble(node.parent.context().init.compile())
+    })
+
+  program
+    .select(".ObjectExpression > properties > .Property[shorthand=true]")
+    .forEach(node => {
+      node.compile = () => {
+        var key = node.context().key.compile()
+        return `${key}:${key}`
+      }
+    })
+
+  program
     .select(".BinaryExpression[operator^='is']")
     .forEach(node => node.compile = () => filters.egal(node))
 
@@ -19,7 +66,7 @@ function rewrite(src) {
     var constructor
     var methods = []
 
-    if ( ctx.body && ctx.body.body ) {
+    if ( ctx.body && ctx.body.body && ctx.body.body.node ) {
       ctx.body.body.node.children.forEach(child => {
         var sub = child.context()
         if ( sub.key.node.matches(".Identifier[name='constructor']") ) constructor = sub
@@ -66,23 +113,55 @@ function rewrite(src) {
   program.select(".ForOfStatement").forEach(node => {
     node.compile = () => {
       var context = node.context()
-      var dec = context.left.matches(".VariableDeclaration[kind='var']")
-      var left = dec ? context.left.declarations.compile() : context.left.compile()
       var right = context.right.compile()
-      var body = context.body.compile()
+      var body = context.body.compile().replace(/^{([\s\S]*)}$/, "$1")
+      var dec = context.left.matches(".VariableDeclaration[kind='var']")
+      var decs = []
+      var left = dec ? context.left.declarations.node.first().context() : context.left.node.context()
+
+      if (left.type === "Identifier" || (left.id && left.id.type === "Identifier")) {
+        decs.push(left.compile())
+        left = `${left.compile()} = _iterator.next()`
+      } else if (left.type === "VariableDeclarator" && left.id.type === "ObjectPattern") {
+        left.select(".ObjectPattern").forEach(node => {
+          decs = decs.concat(node.properties().map(prop=>prop.key))
+          left = node.assemble("_iterator.next()")
+        })
+      } else {
+        left = `(${left.compile()})`
+      }
 
       return `
-        ${ dec ? context.left.compile() + ";" : "" }
+        ${ dec ? "var " + decs.join(", ") + ";" : "" }
         void function(_iterator){
           try {
-            while (${ left } = _iterator.next()) ${ body }
+            while (true) {
+              ${ left }
+              ${ body }
+            }
           } catch (e) { if (e !== StopIteration ) throw e }
         }.call(this, ${ right }.iterator());
       `
     }
   })
 
-	return program.compile()
+  var fin = program.compile()
+
+  var escodegen = require("escodegen")
+
+  fin = escodegen.generate(Tree.create(fin).ast, {
+    format: {
+      indent: {
+        style: '  ',
+        base: 0
+      },
+      quotes: "double",
+      compact: true
+    },
+    comment: true
+  })
+
+	return fin
 }
 
 Object.define(Tree.prototype, {
@@ -94,7 +173,6 @@ Object.define(Tree.prototype, {
       var raw = child.raw()
       var start = src.indexOf(raw)
       var end = start + raw.length
-
       src = src.substring(0, start) + child.compile() + src.substring(end)
     })
 

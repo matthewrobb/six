@@ -2,11 +2,6 @@ var fs = require("fs")
 var path = require("path")
 var exec = require("child_process").exec
 
-var uglify = require("uglify-js")
-
-var jsp = uglify.parser
-var pro = uglify.uglify
-
 var launch = (cmd, callback) => {
   var child = exec(cmd, callback)
   child.stdout.pipe(process.stdout)
@@ -77,27 +72,28 @@ task("build:browser", () => {
   var code = ''
 
   var includes = {
-    'es6': [ "es6" ],
-    'esom/esprima': [ "esprima", "esom/esprima" ],
-    'harmonizr': [ "harmonizr" ],
-    'helpers': [ "helpers" ],
+    'es6': [ "./es6" ],
+    '../node_modules/esprima-six/esprima': [ "esprima-six" ],
+    '../node_modules/escodegen/escodegen': [ "escodegen" ],
+    'harmonizr': [ "./harmonizr" ],
+    'helpers': [ "./helpers" ],
     
-    'filters/egal': [ "filters/egal" ],
-    'filters/quasi': [ 'filters/quasi' ],
-    'filters/class': [ 'filters/class' ],
-    'filters': [ 'filters' ],
+    'filters/egal': [ "./filters/egal" ],
+    'filters/quasi': [ './filters/quasi' ],
+    'filters/class': [ './filters/class' ],
+    'filters': [ './filters' ],
 
-    'esom/rel': [ 'esom/rel', 'rel' ],
-    'esom/trav': [ 'esom/trav', 'trav' ],
-    'esom/tree': [ 'esom/tree', 'tree' ],
+    'esom/rel': [ './esom/rel', './rel' ],
+    'esom/trav': [ './esom/trav', './trav' ],
+    'esom/tree': [ './esom/tree', './tree' ],
     
-    'rewriter': [ 'rewriter' ],
-    'six': [ 'six' ],
-    'browser': [ 'browser' ]
+    'rewriter': [ './rewriter' ],
+    'six': [ './six' ],
+    'browser': [ './browser' ]
   }
 
   Object.keys(includes).forEach(file => {
-    includes[file].forEach(alias => code += 'require["./' + alias + '"] = ')
+    includes[file].forEach(alias => code += 'require["' + alias + '"] = ')
     code += 'new function(){'
     code += '  var exports = this;'
     code += '  ' + fs.readFileSync("lib/" + file + ".js")
@@ -119,7 +115,6 @@ task("build:browser", () => {
   code += '}'
   code += '}(typeof global !== "undefined" ? global : this));'
 
-  //fs.writeFileSync('extras/six.js', pro.gen_code(pro.ast_lift_variables(jsp.parse(code))))
   fs.writeFileSync('extras/six.js', code)
   console.log("built ...")
 
