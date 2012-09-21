@@ -1,4 +1,4 @@
-var esprima = require("./esprima");
+var esprima = require("esprima-six");
 
 var parse = esprima.parse;
 var Syntax = esprima.Syntax;
@@ -6,7 +6,7 @@ var Syntax = esprima.Syntax;
 class Tree {
 
   constructor(source) {
-    var ast = parse(source, { range: true })
+    var ast = parse(source, { range: true, })
 
     Object.define(this, {
       root: this,

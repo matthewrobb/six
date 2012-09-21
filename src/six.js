@@ -8,9 +8,8 @@ require("./es6")
 var rewrite = require("./rewriter").rewrite
 
 var harmonize = exports.harmonize = harmonizr.harmonize;
-var moduleStyles = exports.modulesStyles = harmonizr.modulesStyles;
 
-var run = exports.run = (code, options) => {
+function run (code, options) {
   var mainModule = require.main
 
   if(!options) options = {}
@@ -32,4 +31,5 @@ function compile (src, options, callback) {
   return src
 }
 
+exports.run = run
 exports.compile = compile
