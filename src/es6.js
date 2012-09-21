@@ -1,3 +1,4 @@
+global.StopIteration = {}
 
 // Object static extensions
 Object.defineProperties(global.Object, {
@@ -15,3 +16,15 @@ Object.defineProperties(global.Object, {
   }
 
 })
+
+Array.prototype.iterator = function() {
+  return {
+    elements: this,
+    index: 0,
+    next: function() {
+      if (this.index >= this.elements.length)
+        throw StopIteration
+      return this.elements[this.index++]
+    }
+  }
+}
