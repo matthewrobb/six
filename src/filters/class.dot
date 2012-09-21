@@ -1,0 +1,42 @@
+{{ var id = it.id ? it.id.compile() : "_Class"; }}
+{{ var dec = it.type === "ClassDeclaration"; }}
+{{? dec}}var {{= id}} ={{?}}
+(function(
+{{? it.superClass }}_super{{?}}
+) {
+	{{? it.superClass }}
+		function __ctor() { this.constructor = {{= id}}; }
+		__ctor.prototype = _super.prototype;
+		{{= id}}.prototype = new __ctor();
+		{{= id}}.__super__ = _super.prototype;
+	{{?}}
+
+	function {{= id}}({{? it.constructor }}
+		{{? it.constructor.value.params && it.constructor.value.params.ast}}{{= it.constructor.value.params.compile() }}{{?}})
+		{{= it.constructor.value.body.compile() }}
+	{{??}}
+		){}
+	{{?}}
+
+	{{~ it.methods :method:index }}
+		{{var params = method.value.params && method.value.params.ast;}}
+		{{? method.kind === 'set' || method.kind === 'get' }}
+			Object.defineProperty({{= id}}.prototype, "{{= method.key.compile() }}", {
+				configurable: true,
+				enumerable: true,
+				{{= method.kind }}: function({{? params }}{{= method.value.params.compile() }}{{?}})
+				{{= method.value.body.compile() }}
+			});
+		{{??}}
+			{{= id}}.prototype.{{= method.key.compile() }} = function({{? params }}{{= method.value.params.compile() }}{{?}})
+			{{= method.value.body.compile() }};
+		{{?}}
+		
+	{{~}}
+
+	return {{= id }};
+})(
+
+{{? it.superClass }}{{= it.superClass.compile()}}{{?}}
+
+){{? dec}};{{?}}

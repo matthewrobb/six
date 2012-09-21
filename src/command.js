@@ -330,6 +330,7 @@ var outputPath = function(source, base) {
 var writeJs = function(source, js, base) {
   var jsPath = outputPath(source, base)
   var jsDir  = path.dirname(jsPath)
+
   var compile = function(){
     if (js.length <= 0) js = ' '
     fs.writeFile(jsPath, js, function(err) {

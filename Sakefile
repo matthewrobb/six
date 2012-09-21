@@ -2,7 +2,6 @@ var fs = require("fs")
 var path = require("path")
 var exec = require("child_process").exec
 
-
 var launch = (cmd, callback) => {
   var child = exec(cmd, callback)
   child.stdout.pipe(process.stdout)
@@ -13,10 +12,6 @@ task('test', () => {
   launch('node node_modules/mocha/bin/mocha')
 })
 
-task('compile', () => {
-  launch('node bin/six -co ./lib ./src')
-})
-
 task('cover', () => {
   launch('node node_modules/cover/bin/cover run node_modules/mocha/bin/_mocha', () => {
     launch('node node_modules/cover/bin/cover report html')
@@ -24,30 +19,81 @@ task('cover', () => {
   })
 })
 
+task('compile:six', () => {
+  launch('node bin/six -co ./lib ./src')
+})
+
+task('watch:six', () => launch('node bin/six -cwo ./lib ./src'))
+
+var dot = require("dot")
+
+dot.templateSettings = {
+  evaluate:    /\{\{([\s\S]+?)\}\}/g,
+  interpolate: /\{\{=([\s\S]+?)\}\}/g,
+  encode:      /\{\{!([\s\S]+?)\}\}/g,
+  use:         /\{\{#([\s\S]+?)\}\}/g,
+  define:      /\{\{##\s*([\w\.$]+)\s*(\:|=)([\s\S]+?)#\}\}/g,
+  conditional: /\{\{\?(\?)?\s*([\s\S]*?)\s*\}\}/g,
+  iterate:     /\{\{~\s*(?:\}\}|([\s\S]+?)\s*\:\s*([\w$]+)\s*(?:\:\s*([\w$]+))?\s*\}\})/g,
+  varname: 'it',
+  strip: true,
+  append: true,
+  selfcontained: true
+}
+
+var filterPath = __dirname + "/src/filters/"
+var filterOut = __dirname + "/lib/filters/"
+
+task('compile:dot', () => {
+  fs.readdirSync(filterPath).forEach(file => {
+    if (path.extname(file) === ".dot") {
+      var source = fs.readFileSync(filterPath + file).toString()
+      source = "exports.filter = " + dot.template(source).toString()
+      fs.writeFileSync(filterOut + file.replace(".dot", ".js"), source, 'utf8')
+    }
+  })
+})
+
+task('watch:dot', () => {
+  fs.watch(filterPath, (event, filename) => invoke("compile:dot"))
+})
+
+task('compile', () => {
+  invoke('compile:six')
+  invoke('compile:dot')
+})
+
+task('watch', () => {
+  invoke('watch:six')
+  invoke('watch:dot')
+})
+
 task("build:browser", () => {
   var code = ''
 
   var includes = {
-    'es6': [ "es6" ],
-    'esom/esprima': [ "esprima", "esom/esprima" ],
-    'harmonizr': [ "harmonizr" ],
-    'helpers': [ "helpers" ],
+    'es6': [ "./es6" ],
+    '../node_modules/esprima-six/esprima': [ "esprima-six" ],
+    '../node_modules/escodegen/escodegen': [ "escodegen" ],
+    'harmonizr': [ "./harmonizr" ],
+    'helpers': [ "./helpers" ],
     
-    'filters/egal': [ "filters/egal" ],
-    'filters/quasi': [ 'filters/quasi' ],
-    'filters': [ 'filters' ],
+    'filters/egal': [ "./filters/egal" ],
+    'filters/quasi': [ './filters/quasi' ],
+    'filters/class': [ './filters/class' ],
+    'filters': [ './filters' ],
 
-    'esom/rel': [ 'esom/rel', 'rel' ],
-    'esom/trav': [ 'esom/trav', 'trav' ],
-    'esom/tree': [ 'esom/tree', 'tree' ],
+    'esom/rel': [ './esom/rel', './rel' ],
+    'esom/trav': [ './esom/trav', './trav' ],
+    'esom/tree': [ './esom/tree', './tree' ],
     
-    'rewriter': [ 'rewriter' ],
-    'six': [ 'six' ],
-    'browser': [ 'browser' ]
+    'rewriter': [ './rewriter' ],
+    'six': [ './six' ],
+    'browser': [ './browser' ]
   }
 
   Object.keys(includes).forEach(file => {
-    includes[file].forEach(alias => code += 'require["./' + alias + '"] = ')
+    includes[file].forEach(alias => code += 'require["' + alias + '"] = ')
     code += 'new function(){'
     code += '  var exports = this;'
     code += '  ' + fs.readFileSync("lib/" + file + ".js")
@@ -71,46 +117,5 @@ task("build:browser", () => {
 
   fs.writeFileSync('extras/six.js', code)
   console.log("built ...")
-
-})
-
-task('watch', () => {
-  invoke('watch:six')
-  invoke('watch:dot')
-})
-
-task('watch:six', () => launch('node bin/six -cwo ./lib ./src'))
-
-task('watch:dot', () => {
-  var dot = require("dot")
-
-  dot.templateSettings = {
-    evaluate:    /\{\{([\s\S]+?)\}\}/g,
-    interpolate: /\{\{=([\s\S]+?)\}\}/g,
-    encode:      /\{\{!([\s\S]+?)\}\}/g,
-    use:         /\{\{#([\s\S]+?)\}\}/g,
-    define:      /\{\{##\s*([\w\.$]+)\s*(\:|=)([\s\S]+?)#\}\}/g,
-    conditional: /\{\{\?(\?)?\s*([\s\S]*?)\s*\}\}/g,
-    iterate:     /\{\{~\s*(?:\}\}|([\s\S]+?)\s*\:\s*([\w$]+)\s*(?:\:\s*([\w$]+))?\s*\}\})/g,
-    varname: 'it',
-    strip: true,
-    append: true,
-    selfcontained: true
-  }
-
-  var filterPath = __dirname + "/src/filters/"
-  var filterOut = __dirname + "/lib/filters/"
-
-  fs.watch(filterPath, (event, filename) => {
-
-    fs.readdirSync(filterPath).forEach(file => {
-      if (path.extname(file) === ".dot") {
-        var source = fs.readFileSync(filterPath + file).toString()
-        source = "exports.filter = " + dot.template(source).toString()
-        fs.writeFileSync(filterOut + file.replace(".dot", ".js"), source, 'utf8')
-      }
-    })
-
-  })
 
 })
