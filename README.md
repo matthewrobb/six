@@ -12,6 +12,26 @@ Six is a language super-set of JavaScript that enables new syntactic features fr
 
 WARNING: Still in a very early state, proceed with caution.
 
+You can **try it out now** with this interactive [demo](http://sixlang.org/docs/demo/demo.html)
+
+###Usage
+```JavaScript
+// Install
+npm install six -g
+
+// Execute
+six myFile.js
+
+// Compile
+six --compile --output <OUTPUT> <SOURCE>
+six -c -o <OUTPUT> <SOURCE>
+
+// Watch and compile
+six -cwo <OUTPUT> <SOURCE>
+
+```
+
+
 ###Examples
 ```JavaScript
 
@@ -66,8 +86,8 @@ for(var thing of stuff) {
 }
 
 // Comprehensions
-
-// Modules
+var count = [1, 2, 3]
+var plusOne = [x + 1 for(x of count)]
 
 ```
 
