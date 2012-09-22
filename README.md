@@ -91,3 +91,11 @@ var plusOne = [x + 1 for(x of count)]
 
 ```
 
+##About
+This project is building on top of the already work being done by different individuals and groups around the web. Particularly influential is the amazing work done by [Ariya Hidayat](https://github.com/ariya) and collaborators on the ECMAScript parser [Esprima](http://esprima.org).
+
+The project was started out of a desire to build on the work done with the [Harmonizr](https://github.com/jdiamond/harmonizr) project by [Jason Diamond](https://github.com/jdiamond).
+
+I have a fundamental belief in the philosophies around these projects and the open web in general. I believe this platform's future is vital to us all and I want to do everything I can to help move the needle.
+
+I'm betting on this project, as I have my carerr. I'm betting on JavaScript.
