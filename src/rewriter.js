@@ -1,7 +1,10 @@
+var { generate } = require("escodegen")
 
-var Tree = require("./esom/tree").Tree
+require("./es6")
 
-var filters = require("./filters").filters
+var { Tree } = require("./esom/tree")
+
+var { filters } = require("./filters")
 
 function rewrite(src) {
   var program = Tree.create(src)
@@ -29,7 +32,7 @@ function rewrite(src) {
         var props = node.properties()
         var result = ""
 
-        if (!ctx.init || !ctx.init.matches(".Identifier")) {
+        if (!ctx.init || (!ctx.init.matches(".Identifier") && props.length > 1)) {
           var first = props.shift()
           result += `${first.key} = ${init}, `
           props.push(first)
@@ -145,11 +148,7 @@ function rewrite(src) {
     }
   })
 
-  var fin = program.compile()
-
-  var escodegen = require("escodegen")
-
-  fin = escodegen.generate(Tree.create(fin).ast, {
+  return generate(Tree.create(program.compile()).ast, {
     format: {
       indent: {
         style: '  ',
@@ -160,8 +159,6 @@ function rewrite(src) {
     },
     comment: true
   })
-
-	return fin
 }
 
 Object.define(Tree.prototype, {
