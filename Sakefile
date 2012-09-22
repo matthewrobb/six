@@ -8,17 +8,6 @@ var launch = (cmd, callback) => {
   child.stderr.pipe(process.stderr)
 }
 
-task('test', () => {
-  launch('node node_modules/mocha/bin/mocha')
-})
-
-task('cover', () => {
-  launch('node node_modules/cover/bin/cover run node_modules/mocha/bin/_mocha', () => {
-    launch('node node_modules/cover/bin/cover report html')
-    launch('node node_modules/cover/bin/cover report cli')
-  })
-})
-
 task('compile:six', () => {
   launch('node bin/six -co ./lib ./src')
 })
@@ -95,7 +84,7 @@ task("build:browser", () => {
   Object.keys(includes).forEach(file => {
     includes[file].forEach(alias => code += 'require["' + alias + '"] = ')
     code += 'new function(){'
-    code += '  var exports = this;'
+    code += '  var module= {}, module.exports = exports = this;'
     code += '  ' + fs.readFileSync("lib/" + file + ".js")
     code += '};'
   })

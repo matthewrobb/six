@@ -2,12 +2,8 @@
 var fs = require("fs")
 var path = require("path")
 
-var harmonizr = require("./harmonizr")
-require("./es6")
-
-var rewrite = require("./rewriter").rewrite
-
-var harmonize = exports.harmonize = harmonizr.harmonize;
+var { harmonize } = require("./harmonizr")
+var { rewrite } = require("./rewriter")
 
 function run (code, options) {
   var mainModule = require.main
@@ -31,5 +27,4 @@ function compile (src, options, callback) {
   return src
 }
 
-exports.run = run
-exports.compile = compile
+module.exports = { run, compile, harmonize }
