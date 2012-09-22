@@ -84,7 +84,7 @@ task("build:browser", () => {
   Object.keys(includes).forEach(file => {
     includes[file].forEach(alias => code += 'require["' + alias + '"] = ')
     code += 'new function(){'
-    code += '  var module= {}, module.exports = exports = this;'
+    code += '  var module = {}, exports = module.exports = this;'
     code += '  ' + fs.readFileSync("lib/" + file + ".js")
     code += '};'
   })
