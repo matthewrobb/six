@@ -27,4 +27,4 @@ function compile (src, options, callback) {
   return src
 }
 
-module.exports = { run, compile, harmonize }
+Object.define(exports, { run, compile, harmonize })
