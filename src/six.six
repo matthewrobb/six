@@ -2,7 +2,6 @@
 var fs = require("fs")
 var path = require("path")
 
-var { harmonize } = require("./harmonizr")
 var { rewrite } = require("./rewriter")
 
 function run (code, options) {
@@ -14,7 +13,7 @@ function run (code, options) {
   mainModule.moduleCache && (mainModule.moduleCache = {})
   mainModule.paths = require('module')._nodeModulePaths(path.dirname(fs.realpathSync(options.filename)))
 
-  if (path.extname(mainModule.filename) !== '.js' || require.extensions) {
+  if (path.extname(mainModule.filename) !== '.six' || require.extensions) {
     mainModule._compile(compile(code, options), mainModule.filename)
   } else {
     mainModule._compile(code, mainModule.filename)
@@ -22,9 +21,8 @@ function run (code, options) {
 }
 
 function compile (src, options, callback) {
-  src = harmonize(src, options)
   src = rewrite(src)
   return src
 }
 
-Object.define(exports, { run, compile, harmonize })
+Object.define(exports, { run, compile })

@@ -7,14 +7,18 @@ class Tree {
 
   constructor(source) {
     var ast = parse(source, { range: true, })
+    var children = []
 
     Object.define(this, {
       root: this,
       get source() { return source },
-      get ast() { return ast }
+      get ast() { return ast },
+      get children() {return children}
     })
 
-    return this.create({ ast, key: 'root', type: 'Node' })
+     children.push(this.create({ ast, key: 'root', type: 'Node' }))
+
+    return children[0]
   }
 
   create (base) {
