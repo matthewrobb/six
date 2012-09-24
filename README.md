@@ -102,4 +102,4 @@ The ability to offer a tool such as this can't possibly exist without the member
 
 I have a fundamental belief in the philosophies around these projects and the open web in general. I believe this platform's future is vital to us all and I want to do everything I can to help move the needle.
 
-I'm betting on this project, as I have my carerr. I'm betting on JavaScript.
+I'm betting on JavaScript.

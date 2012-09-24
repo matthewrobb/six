@@ -1,0 +1,66 @@
+require("./es6")
+
+var { Tree } = require("./esom/tree")
+var hooks = require("./hooks/base")
+
+function rewrite(src) {
+  var program = Tree.create(src)
+
+  for(var { selector: key, hook: value } of hooks) {
+    program.root.select(selector).forEach(hook)
+  }
+
+  return program.compile()
+}
+
+Object.define(Tree.prototype, {
+
+  compile () {
+    var src = this.raw()
+
+    this.children.reverse().forEach(child => {
+      var raw = child.raw()
+      var start = src.indexOf(raw)
+      var end = start + raw.length
+      src = src.substring(0, start) + child.compile() + src.substring(end)
+    })
+
+    return src
+  },
+
+  context() {
+    var ctx = new Context(this)
+    return ctx
+  }
+
+})
+
+class Context {
+
+  constructor(node) {
+    var stack = Object.create(node)
+
+    Object.define(stack, node.ast)
+    Object.define(stack, {
+      node,
+      get parent() {
+        if ( node.parent ) return node.parent.context()
+      }
+    })
+
+    if (stack.hasOwnProperty("loc")) delete stack['loc']
+
+    node.children.forEach(child => {
+      var ctx = child.context()
+      Object.defineProperty(stack, child.key, {
+        get() ctx,
+        enumerable: true
+      })
+    })
+
+    return stack
+  }
+
+}
+
+exports.rewrite = rewrite

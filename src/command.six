@@ -1,4 +1,4 @@
-// The `coffee` utility. Handles command-line compilation of CoffeeScript
+// The `six` utility. Handles command-line compilation of Six
 // into various forms: saved into `.js` files or printed to stdout, piped to
 // [JavaScript Lint](http://javascriptlint.com/) or recompiled every time the source is
 // saved, printed as a token stream or as the syntax tree, or launch an
@@ -17,7 +17,7 @@ var EventEmitter = require('events').EventEmitter
 
 var exists = fs.exists || path.exists
 
-// Allow CoffeeScript to emit Node.js events.
+// Allow Six to emit Node.js events.
 helpers.extend(six, new EventEmitter)
 
 var printLine = function(line) { return process.stdout.write(line + '\n') }
@@ -25,14 +25,14 @@ var printWarn = function(line) { return process.stderr.write(line + '\n') }
 
 var hidden = function(file) { return /^\.|~$/.test(file) }
 
-// The list of all the valid option flags that `coffee` knows how to handle.
+// The list of all the valid option flags that `six` knows how to handle.
 var SWITCHES = [
   ['-b', '--bare', 'compile without a top-level function wrapper'],
   ['-c', '--compile', 'compile to JavaScript and save as .js files'],
   ['-e', '--eval', 'pass a string from the command line as input'],
   ['-h', '--help', 'display this help message'],
-  ['-i', '--interactive', 'run an interactive CoffeeScript REPL'],
-  ['-j', '--join [FILE]', 'concatenate the source CoffeeScript before compiling'],
+  ['-i', '--interactive', 'run an interactive Six REPL'],
+  ['-j', '--join [FILE]', 'concatenate the source Six before compiling'],
   ['-l', '--lint', 'pipe the compiled JavaScript through JavaScript Lint'],
   ['-n', '--nodes', 'print out the parse tree that the parser produces'],
   [      '--nodejs [ARGS]', 'pass options directly to the "node" binary'],
@@ -53,7 +53,7 @@ var notSources = {}
 var watchers = {}
 var optionParser = null
 
-// Run `coffee` by parsing passed options and determining what action to take.
+// Run `six` by parsing passed options and determining what action to take.
 // Many flags cause us to divert before compiling anything. Flags passed after
 // `--` will be passed verbatim to your script as arguments in `process.argv`
 exports.run = function() {
@@ -81,7 +81,7 @@ exports.run = function() {
 }
 
 // Compile a path, which could be a script or a directory. If a directory
-// is passed, recursively compile all '.coffee' extension source files in it
+// is passed, recursively compile all '.six' extension source files in it
 // and all subdirectories.
 var compilePath = function(source, topLevel, base) {
   fs.stat(source, function(err, stats) {
@@ -89,8 +89,8 @@ var compilePath = function(source, topLevel, base) {
     if (err && err.code !== 'ENOENT') throw err
 
     if ((err != null ? err.code : void 0) === 'ENOENT') {
-      if (topLevel && source.slice(-3) !== '.js') {
-        source = sources[sources.indexOf(source)] = "" + source + ".js"
+      if (topLevel && source.slice(-4) !== '.six') {
+        source = sources[sources.indexOf(source)] = "" + source + ".six"
         return compilePath(source, topLevel, base)
       }
       if (topLevel) {
@@ -132,7 +132,7 @@ var compilePath = function(source, topLevel, base) {
           return compilePath(path.join(source, file), false, base)
         })
       })
-    } else if (topLevel || path.extname(source) === '.js') {
+    } else if (topLevel || path.extname(source) === '.six') {
       if (opts.watch) watch(source, base)
       fs.readFile(source, function(err, code) {
         if (err && err.code !== 'ENOENT') throw err
@@ -184,7 +184,7 @@ var compileScript = function(file, input, base) {
   }
 }
 
-// Watch a source CoffeeScript file using `fs.watch`, recompiling it every
+// Watch a source Six file using `fs.watch`, recompiling it every
 // time the file is updated. May be used in combination with other options,
 // such as `--lint` or `--print`.
 var watch = function(source, base) {
@@ -378,5 +378,5 @@ var usage = function() {
 }
 
 var version = function() {
-  return printLine("SIX version -1")
+  return printLine("SIX version 0.0.x")
 }
