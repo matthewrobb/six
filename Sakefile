@@ -64,17 +64,20 @@ task("build:browser", () => {
     'es6': [ "./es6" ],
     '../node_modules/esprima-six/esprima': [ "esprima-six" ],
     '../node_modules/escodegen/escodegen': [ "escodegen" ],
-    'harmonizr': [ "./harmonizr" ],
-    'helpers': [ "./helpers" ],
     
     'filters/egal': [ "./filters/egal" ],
     'filters/quasi': [ './filters/quasi' ],
     'filters/class': [ './filters/class' ],
-    'filters': [ './filters' ],
+    'filters': [ '../filters' ],
 
     'esom/rel': [ './esom/rel', './rel' ],
     'esom/trav': [ './esom/trav', './trav' ],
     'esom/tree': [ './esom/tree', './tree' ],
+
+    'hooks/classes': [ './classes' ],
+    'hooks/forof': [ './forof' ],
+    'hooks/objectpattern': [ './objectpattern' ],
+    'hooks/base': [ './hooks/base' ],
     
     'rewriter': [ './rewriter' ],
     'six': [ './six' ],
