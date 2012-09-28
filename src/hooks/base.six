@@ -58,7 +58,7 @@ var hooks = {
     node.compile = () => filters.egal(node)
   },
 
-  ".QuasiLiteral": node => {
+  ".TemplateLiteral": node => {
     node.compile = () => filters.quasi(node.context())
   }
 
