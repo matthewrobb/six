@@ -3,6 +3,7 @@ var fs = require("fs")
 var path = require("path")
 
 var { rewrite } = require("./rewriter")
+var { dumpAst } = require("./dumper")
 
 function run (code, options) {
   var mainModule = require.main
@@ -25,4 +26,8 @@ function compile (src, options, callback) {
   return src
 }
 
-Object.define(exports, { run, compile })
+function nodes (src, options) {
+  return dumpAst(src, options.verbose)
+}
+
+Object.define(exports, { run, compile, nodes })

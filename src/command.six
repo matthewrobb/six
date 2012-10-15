@@ -42,6 +42,7 @@ var SWITCHES = [
   ['-s', '--stdio', 'listen for and compile scripts over stdio'],
   ['-t', '--tokens', 'print out the tokens that the lexer/rewriter produce'],
   ['-v', '--version', 'display the version number'],
+  ['-V', '--verbose', 'increase verbosity'],
   ['-w', '--watch', 'watch scripts for changes and rerun commands']
 ]
 
@@ -162,7 +163,7 @@ var compileScript = function(file, input, base) {
 
     six.emit('compile', task)
     if (o.tokens) printTokens(six.tokens(t.input))
-    else if (o.nodes) printLine(six.nodes(t.input).toString().trim())
+    else if (o.nodes) printLine(six.nodes(t.input, t.options))
     else if (o.run) six.run(t.input, t.options)
     else if (o.join && t.file !== o.join) {
       sourceCode[sources.indexOf(t.file)] = t.input
@@ -369,7 +370,8 @@ var compileOptions = function(filename) {
   return {
     filename: filename,
     bare: opts.bare,
-    header: opts.compile
+    header: opts.compile,
+    verbose: opts.verbose
   }
 }
 
