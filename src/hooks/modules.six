@@ -1,0 +1,76 @@
+import existsSync from "fs"
+import sep from "path"
+
+var hooks = {
+  ".ModuleDeclaration": node => {
+    var compile = node.compile
+    node.compile = () => {
+      var ret = "var "
+      var ctx = node.context()
+      var from = ctx.from
+
+      if (! from)
+        return compile.call(node)
+
+      if (from.type is 'Literal') {
+        // import directly from file
+        var modRoot = from.value
+        return `var ${ctx.id.name} = require("${modRoot}");`
+      }
+      else {
+        var modRoot = from.compile()
+        return `var ${ctx.id.name} = ${modRoot};`
+      }
+    }
+  },
+  ".ImportDeclaration": node => {
+    node.compile = () => {
+      var ret = "var "
+      var ctx = node.context()
+      var from = ctx.from
+
+      if (from.type is 'Literal') {
+        // import directly from file
+        var modRoot = from.value
+        var modVarName = modRoot.replace('/', '_')
+        modRoot = `require("${modRoot}")`
+      }
+      else {
+        // the only other valid text here is a namespace path
+        from = from.context().body.node
+        var modNames = from.children.map(path => path.context().name)
+        var modVarName = modNames.join("_")
+        var modRoot = from.compile()
+      }
+
+      var specifiers = ctx.specifiers.node.children
+
+      if (specifiers.length is 1) {
+        modVarName = modRoot
+      }
+      else {
+        ret += `${modVarName} = ${modRoot}`
+      }
+
+      specifiers.forEach(spec => {
+        if (specifiers.length > 1)
+          ret += ', '
+
+        var ctx = spec.context()
+        if (ctx.type is "ImportSpecifier") {
+          var name = ctx.id.name
+          var from = ctx.from ? ctx.from.node.children[0].ast[0].name : name
+
+          ret += `${from} = ${modVarName}.${name}`
+        }
+        else {
+          ret += `${ctx.name} = ${modVarName}.${ctx.name}`
+        }
+      })
+
+      return ret + ";";
+    }
+  }
+}
+
+Object.define(exports, hooks)

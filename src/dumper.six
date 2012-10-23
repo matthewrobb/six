@@ -1,4 +1,4 @@
-var { Tree } = require("./esom/tree")
+import Tree from "./esom/tree"
 
 function dumpAst(src, includeRanges) {
   var program = Tree.create(src)

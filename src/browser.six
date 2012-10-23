@@ -1,4 +1,4 @@
-Six = require("./six")
+module Six = "./six"
 
 Six.require = require
 

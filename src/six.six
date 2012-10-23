@@ -1,9 +1,9 @@
 
-var fs = require("fs")
-var path = require("path")
+module fs = "fs"
+module path = "path"
 
-var { rewrite } = require("./rewriter")
-var { dumpAst } = require("./dumper")
+import rewrite from "./rewriter"
+import dumpAst from "./dumper"
 
 function run (code, options) {
   var mainModule = require.main
@@ -22,7 +22,7 @@ function run (code, options) {
 }
 
 function compile (src, options, callback) {
-  src = rewrite(src)
+  src = rewrite(src, options)
   return src
 }
 
