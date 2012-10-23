@@ -89,7 +89,23 @@ for(var thing of stuff) {
 var count = [1, 2, 3]
 var plusOne = [x + 1 for(x of count)]
 
+// Importing modules from files or node modules
+module path = "path"
+module local = "./local.js"
+
+// Aliasing modules
+module files = fs
+
+// Importing content from a module
+import dirname from fs
+
+// Importing content direct from a file
+import local_function from "./local.js"
+
 ```
+
+##Module Support
+six outputs [UMD](https://github.com/umdjs/umd) compatible modules allowing modules to work in CommonJS environments such as node in addition to the web browser via an [AMD](http://requirejs.org/docs/whyamd.html) module environment such as [requirejs](http://requirejs.org/). Each file forms an implicit module whether a "module" declaration is used or not and thus the export (or the exports object) must be used to export data to the scope. The "-g" or "--global" command-line argument can be used to inhibit this behavior allowing code the possiblity to write directly to the global namespace when imported using an AMD module loader.
 
 ##About
 The Six project is building on top of the work already being done by different individuals and groups around the web. Particularly influential is the amazing work done by [Ariya Hidayat](https://github.com/ariya) and collaborators on the ECMAScript parser [Esprima](http://esprima.org).
