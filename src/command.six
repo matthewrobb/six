@@ -5,15 +5,13 @@
 // interactive REPL.
 
 // External dependencies.
-var fs = require('fs')
-var path = require('path')
-var helpers = require('./helpers')
-var optparse = require('./optparse')
-var six = require('./six')
-var child_process = require('child_process')
-var spawn = child_process.spawn
-var exec = child_process.exec
-var EventEmitter = require('events').EventEmitter
+module fs = "fs"
+module path = "path"
+module helpers = "./helpers"
+module optparse = "./optparse"
+module six = "./six"
+import {spawn, exec} from "child_process"
+import EventEmitter from "events"
 
 var exists = fs.exists || path.exists
 
@@ -30,6 +28,7 @@ var SWITCHES = [
   ['-b', '--bare', 'compile without a top-level function wrapper'],
   ['-c', '--compile', 'compile to JavaScript and save as .js files'],
   ['-e', '--eval', 'pass a string from the command line as input'],
+  ['-g', '--global', 'put code directly into global scope rather than UMD define'],
   ['-h', '--help', 'display this help message'],
   ['-i', '--interactive', 'run an interactive Six REPL'],
   ['-j', '--join [FILE]', 'concatenate the source Six before compiling'],
@@ -371,7 +370,8 @@ var compileOptions = function(filename) {
     filename: filename,
     bare: opts.bare,
     header: opts.compile,
-    verbose: opts.verbose
+    verbose: opts.verbose,
+    global: opts.global
   }
 }
 

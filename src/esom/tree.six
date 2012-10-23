@@ -1,11 +1,11 @@
-var esprima = require("esprima-six");
+module esprima = "esprima-six";
 
 var parse = esprima.parse;
 var Syntax = esprima.Syntax;
 
 class Tree {
 
-  constructor(source) {
+  constructor(source, options) {
     var ast = parse(source, { range: true, })
     var children = []
 
@@ -18,7 +18,9 @@ class Tree {
 
      children.push(this.create({ ast, key: 'root', type: 'Node' }))
 
-    return children[0]
+    var node = children[0]
+    node.global = options && options.global
+    return node
   }
 
   create (base) {
@@ -67,7 +69,7 @@ class Tree {
 }
 
 Object.define(Tree, {
-  create(src) new this(src)
+  create(src, options) new this(src, options)
 })
 
 Object.define(Tree.prototype, require("./trav").Traversal)
