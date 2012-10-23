@@ -32,7 +32,7 @@ var hooks = {
       if (from.type is 'Literal') {
         // import directly from file
         var modRoot = from.value
-        var modVarName = modRoot.replace('/', '_')
+        var modVarName = modRoot.replace(/[\/\.]/g, '_')
         modRoot = `require("${modRoot}")`
       }
       else {
@@ -69,6 +69,33 @@ var hooks = {
       })
 
       return ret + ";";
+    }
+  },
+  ".ExportDeclaration": node => {
+    node.compile = () => {
+      var exportee = node.context().declaration.context()
+      switch (exportee.type) {
+        case "FunctionDeclaration":
+          var name = exportee.id.context().name
+          // test params[0] as when empty it is an array, otherwise an object
+          return `var ${name} = exports.${name} = function(` +
+           (exportee.params[0] ? exportee.params.compile() : '') +
+           `) ${exportee.body.compile()};\n`
+        case "VariableDeclaration":
+          var ret = ''
+          exportee.declarations.children.forEach((value, idx) => {
+            var declaration = value.context()
+            var name = declaration.id.context().name
+            ret += `var ${name} = exports.${name} = ` +
+              (declaration.init ? declaration.init.compile() : 'null') + ";\n"
+          })
+          return ret
+        case "ModuleDeclaration":
+          // TODO
+        default:
+          // should be unreachable but fallthrough in case the standard changes
+          return node.context().declaration.compile()
+      }
     }
   }
 }
