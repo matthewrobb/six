@@ -59,4 +59,11 @@ describe('import statement', function() {
     expect(exports.a).to.equal(exports.b + exports.c)
     exports = {}
   })
+
+  it("export module alias from a module", function(){
+    var src = "export module mag = './inc/magic';"
+    eval(six.compile(src))
+    expect(exports.mag.number()).to.equal(420)
+    exports = {}
+  })
 });
