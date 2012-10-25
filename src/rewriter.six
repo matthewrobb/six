@@ -3,7 +3,7 @@ require("./es6")
 import Tree from "./esom/tree"
 module hooks = "./hooks/base"
 
-function rewrite(src, options) {
+export function rewrite(src, options) {
   var program = Tree.create(src, options)
 
   for(var { selector: key, hook: value } of hooks) {
@@ -62,5 +62,3 @@ class Context {
   }
 
 }
-
-exports.rewrite = rewrite

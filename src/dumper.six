@@ -1,6 +1,6 @@
 import Tree from "./esom/tree"
 
-function dumpAst(src, includeRanges) {
+export function dumpAst(src, includeRanges) {
   var program = Tree.create(src)
 
   if (! includeRanges) {
@@ -13,5 +13,3 @@ function dumpAst(src, includeRanges) {
 
   return JSON.stringify(program.ast, null, 2)
 }
-
-exports.dumpAst = dumpAst

@@ -1,4 +1,4 @@
-exports.extend = (object, properties) => {
+export function extend(object, properties) {
   var key, val
   for (key in properties) {
     val = properties[key]
