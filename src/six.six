@@ -30,4 +30,12 @@ function nodes (src, options) {
   return dumpAst(src, options.verbose)
 }
 
+// Register .six exension with node
+if (require && require.extensions) {
+  require.extensions['.six'] = function(module, filename) {
+    var content = compile(fs.readFileSync(filename, 'utf8'));
+    return module._compile(content, filename);
+  };
+}
+
 Object.define(exports, { run, compile, nodes })
