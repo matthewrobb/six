@@ -54,7 +54,7 @@ helpers.extend(global, {
 // asynchrony may cause tasks to execute in a different order than you'd expect.
 // If no tasks are passed, print the help screen. Keep a reference to the
 // original directory name, when running Sake tasks from subdirectories.
-exports.run = function(){
+export function run() {
   global.__originalDirname = fs.realpathSync('.')
   process.chdir(sakefileDirectory(__originalDirname))
   var args = process.argv.slice(2)

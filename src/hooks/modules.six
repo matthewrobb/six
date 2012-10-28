@@ -32,13 +32,13 @@ var hooks = {
       if (from.type is 'Literal') {
         // import directly from file
         var modRoot = from.value
-        var modVarName = modRoot.replace('/', '_')
+        var modVarName = modRoot.replace(/[\/\.]/g, '_')
         modRoot = `require("${modRoot}")`
       }
       else {
         // the only other valid text here is a namespace path
         from = from.context().body.node
-        var modNames = from.children.map(path => path.context().name)
+        var modNames = from.children.map(path => path.name)
         var modVarName = modNames.join("_")
         var modRoot = from.compile()
       }
@@ -69,6 +69,46 @@ var hooks = {
       })
 
       return ret + ";";
+    }
+  },
+  ".ExportDeclaration": node => {
+    node.compile = () => {
+      var exportee = node.context().declaration.context()
+      switch (exportee.type) {
+        case "FunctionDeclaration":
+          var name = exportee.id.name
+          // test params[0] as when empty it is an array, otherwise an object
+          return `var ${name} = exports.${name} = function(` +
+           (exportee.params[0] ? exportee.params.compile() : '') +
+           `) ${exportee.body.compile()};\n`
+        case "VariableDeclaration":
+          var ret = ''
+          exportee.declarations.children.forEach((value, idx) => {
+            var declaration = value.context()
+            var name = declaration.id.name
+            ret += `var ${name} = exports.${name} = ` +
+              (declaration.init ? declaration.init.compile() : 'null') + ";\n"
+          })
+          return ret
+        case "ModuleDeclaration":
+          var from = exportee.from
+          if (from) {
+            var name = exportee.id.name
+            if (from.type is 'Literal') {
+              // import directly from file
+              var modRoot = from.value
+              return `var ${name} = exports.${name} = require("${modRoot}");`
+            }
+            else {
+              var modRoot = fromcompile()
+              return `var ${name} = exports.${name} = ${modRoot};`
+            }
+          }
+          // TODO
+        default:
+          // should be unreachable but fallthrough in case the standard changes
+          return node.context().declaration.compile()
+      }
     }
   }
 }
