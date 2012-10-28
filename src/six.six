@@ -5,7 +5,7 @@ module path = "path"
 import rewrite from "./rewriter"
 import dumpAst from "./dumper"
 
-function run (code, options) {
+export function run (code, options) {
   var mainModule = require.main
 
   if(!options) options = {}
@@ -21,15 +21,14 @@ function run (code, options) {
   }
 }
 
-function compile (src, options, callback) {
+export function compile (src, options, callback) {
   src = rewrite(src, options)
   return src
 }
 
-function nodes (src, options) {
+export function nodes (src, options) {
   return dumpAst(src, options.verbose)
 }
-
 // Register .six exension with node
 if (require && require.extensions) {
   require.extensions['.six'] = function(module, filename) {
@@ -37,5 +36,3 @@ if (require && require.extensions) {
     return module._compile(content, filename);
   };
 }
-
-Object.define(exports, { run, compile, nodes })

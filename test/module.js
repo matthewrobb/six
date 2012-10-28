@@ -30,4 +30,40 @@ describe('import statement', function() {
     eval(result)
     expect(n).to.equal(420)
   })
+
+  it("alias a module alias to a subsequent alias", function(){
+    var src = "module dance = './inc/magic'; module bon = dance; var n = bon.number()"
+    var result = compile(src)
+    eval(result)
+    expect(n).to.equal(420)
+  })
+
+  it("export a function from a module", function(){
+    var src = "export function add400(a) { return a + 400; }"
+    eval(six.compile(src))
+    var n = exports.add400(20)
+    expect(n).to.equal(420)
+    exports = {}
+  })
+
+  it("export a variable from a module", function(){
+    var src = "export var n = 420"
+    eval(six.compile(src))
+    expect(exports.n).to.equal(420)
+    exports = {}
+  })
+
+  it("export variables from a module", function(){
+    var src = "export var a = 420, b = 400, c = 20"
+    eval(six.compile(src))
+    expect(exports.a).to.equal(exports.b + exports.c)
+    exports = {}
+  })
+
+  it("export module alias from a module", function(){
+    var src = "export module mag = './inc/magic';"
+    eval(six.compile(src))
+    expect(exports.mag.number()).to.equal(420)
+    exports = {}
+  })
 });

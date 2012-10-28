@@ -95,7 +95,7 @@ class Query {
 
 }
 
-var Traversal = {
+export var Traversal = {
 
   select(query, frags) {
     var results = []
@@ -179,5 +179,3 @@ var Traversal = {
 }
 
 Object.define(Traversal, require("./rel").Relatives)
-
-exports.Traversal = Traversal

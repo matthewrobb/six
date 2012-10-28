@@ -102,6 +102,12 @@ import dirname from fs
 // Importing content direct from a file
 import local_function from "./local.js"
 
+// Export a function from a module.
+export function mod_func() { }
+
+// Export variables from a module.
+export var a = 400, b = {}
+
 ```
 
 ##Module Support
