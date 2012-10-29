@@ -66,4 +66,11 @@ describe('import statement', function() {
     expect(exports.mag.number()).to.equal(420)
     exports = {}
   })
+
+  it("export a predeclared symbol", function(){
+    var src = "var lovely = 'kitten'; export lovely"
+    eval(six.compile(src))
+    expect(exports.lovely).to.equal('kitten')
+    exports = {}
+  })
 });
