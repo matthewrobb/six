@@ -72,18 +72,19 @@ var hooks = {
     }
   },
   ".ExportDeclaration": node => {
+    var ctx = node.context()
     node.compile = () => {
-      var declaration = node.context().declaration
+      var declaration = ctx.declaration
       if (! declaration) {
         var ret = ''
-        node.context().specifiers.node.children.forEach(value => {
+        ctx.specifiers.node.children.forEach(value => {
           var name = value.context().id.name
           ret += `exports.${name} = ${name};`
         })
         return ret
       }
 
-      var exportee = declaration.context()
+      var exportee = declaration
       switch (exportee.type) {
         case "FunctionDeclaration":
           var name = exportee.id.name
@@ -117,7 +118,7 @@ var hooks = {
           // TODO
         default:
           // should be unreachable but fallthrough in case the standard changes
-          return node.context().declaration.compile()
+          return ctx.declaration.compile()
       }
     }
   }
