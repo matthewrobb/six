@@ -81,7 +81,8 @@ Array.prototype.map.call([
   "./classes",
   "./forof",
   "./objectpattern",
-  "./modules"
+  "./modules",
+  "./restparams"
 
 ],
 
