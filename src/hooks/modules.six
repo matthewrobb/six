@@ -73,7 +73,17 @@ var hooks = {
   },
   ".ExportDeclaration": node => {
     node.compile = () => {
-      var exportee = node.context().declaration.context()
+      var declaration = node.context().declaration
+      if (! declaration) {
+        var ret = ''
+        node.context().specifiers.node.children.forEach(value => {
+          var name = value.context().id.name
+          ret += `exports.${name} = ${name};`
+        })
+        return ret
+      }
+
+      var exportee = declaration.context()
       switch (exportee.type) {
         case "FunctionDeclaration":
           var name = exportee.id.name
