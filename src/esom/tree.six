@@ -43,7 +43,7 @@ class Tree {
     Object.define(node, {
       get ast() { return base.ast },
       get parent() { return parent },
-      get children() { return children.slice(0) },
+      get children() { return children },
       unshift(node) { children.unshift(node) },
       push(node) { children.push(node) }
     })
