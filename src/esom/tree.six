@@ -64,6 +64,21 @@ class Tree {
     })
   }
 
+  visitByType (typeCallbacks) {
+    this.children.forEach(child => {
+      if (! child.ast) {
+        return
+      }
+
+      var callback = typeCallbacks[child.ast.type]
+      if (callback) {
+        callback(child)
+      }
+
+      child.visitByType(typeCallbacks)
+    })
+  }
+
   raw() { return this.source.substring(this.ast.range[0], this.ast.range[1]) }
   isRoot() { return this.parent === this.root }
   path() { return this.isRoot() ? "" : this.parent.path + "." + this.key }
