@@ -1,5 +1,5 @@
-var { generate } = require("escodegen")
-var { filters } = require("../filters")
+import generate from "escodegen"
+import filters from "../filters"
 
 function iterator() {
   return {
@@ -19,17 +19,29 @@ var hooks = {
     var compile = node.compile
     node.compile = () => {
       var src = compile.call(node)
-      return generate(node.constructor.create(src).ast, {
+      var body = generate(node.constructor.create(src).ast, {
         format: {
           indent: {
             style: '  ',
-            base: 0
+            base: node.global ? 0 : 1
           },
           quotes: "double",
           compact: false
         },
         comment: true
       })
+
+      if (! node.global) {
+        body =
+          "if (typeof exports === 'object' && typeof define !== 'function') {\n" +
+          "  var define = function (factory) {\n" +
+          "    factory(require, exports);\n" +
+          "  };\n" +
+          "}\n" +
+          "define(function (require, exports) {\n" + body + "\n});"
+      }
+
+      return body
     }
   },
 
@@ -58,10 +70,9 @@ var hooks = {
     node.compile = () => filters.egal(node)
   },
 
-  ".QuasiLiteral": node => {
+  ".TemplateLiteral": node => {
     node.compile = () => filters.quasi(node.context())
   }
-
 }
 
 Array.prototype.map.call([
@@ -69,7 +80,9 @@ Array.prototype.map.call([
   hooks,
   "./classes",
   "./forof",
-  "./objectpattern"
+  "./objectpattern",
+  "./modules",
+  "./restparams"
 
 ],
 

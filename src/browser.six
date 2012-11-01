@@ -1,4 +1,4 @@
-Six = require("./six")
+module Six = "./six"
 
 Six.require = require
 
@@ -7,7 +7,7 @@ Six.eval = function(code, options) {
 }
 
 Six.run = function(code, options) {
-  Function(Six.compile(code, options))()
+  Function(Six.compile(code, options || {global:true}))()
 }
 
 // Load a remote script from the current domain via XHR.

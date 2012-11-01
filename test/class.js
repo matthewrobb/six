@@ -1,10 +1,11 @@
 var expect = require("chai").expect;
 var six = require('../lib/six');
+var compile = function (src) { return six.compile(src, { global: true }); }
 
 describe('classes', function() {
   it("produces a valid constructor function from an empty declaration", function(){
     var src = "class A {}"
-    var result = six.compile(src)
+    var result = compile(src)
 
     eval(result)
 
@@ -26,7 +27,7 @@ describe('classes', function() {
 
   it("produces a valid constructor function from an empty constructor method", function(){
     var src = "class A {constructor(b){}}"
-    var result = six.compile(src)
+    var result = compile(src)
 
     eval(result)
 

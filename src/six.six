@@ -1,10 +1,11 @@
 
-var fs = require("fs")
-var path = require("path")
+module fs = "fs"
+module path = "path"
 
-var { rewrite } = require("./rewriter")
+import rewrite from "./rewriter"
+import dumpAst from "./dumper"
 
-function run (code, options) {
+export function run (code, options) {
   var mainModule = require.main
 
   if(!options) options = {}
@@ -20,9 +21,18 @@ function run (code, options) {
   }
 }
 
-function compile (src, options, callback) {
-  src = rewrite(src)
+export function compile (src, options, callback) {
+  src = rewrite(src, options)
   return src
 }
 
-Object.define(exports, { run, compile })
+export function nodes (src, options) {
+  return dumpAst(src, options.verbose)
+}
+// Register .six exension with node
+if (require && require.extensions) {
+  require.extensions['.six'] = function(module, filename) {
+    var content = compile(fs.readFileSync(filename, 'utf8'));
+    return module._compile(content, filename);
+  };
+}

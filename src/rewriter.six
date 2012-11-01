@@ -1,14 +1,33 @@
 require("./es6")
 
-var { Tree } = require("./esom/tree")
-var hooks = require("./hooks/base")
+import Tree from "./esom/tree"
+module hooks = "./hooks/base"
 
-function rewrite(src) {
-  var program = Tree.create(src)
+// A cache of hooks that can be run in a single pass.
+var visitors = {}
+
+// Push applicable hooks into visitor pass.
+function optimizeHooks() {
+  var sels = Object.keys(hooks)
+  var optimizable = /^\.[a-zA-Z]+$/
+  for (var sel of sels) {
+    if (optimizable.exec(sel)) {
+      visitors[sel.substring(1)] = hooks[sel]
+      delete hooks[sel]
+    }
+  }
+}
+
+optimizeHooks()
+
+export function rewrite(src, options) {
+  var program = Tree.create(src, options)
 
   for(var { selector: key, hook: value } of hooks) {
     program.root.select(selector).forEach(hook)
   }
+
+  program.root.visitByType(visitors)
 
   return program.compile()
 }
@@ -62,5 +81,3 @@ class Context {
   }
 
 }
-
-exports.rewrite = rewrite

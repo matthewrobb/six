@@ -1,4 +1,4 @@
-var Relatives = {
+export var Relatives = {
 
   first()  this.children[ 0 ],
   last()   this.children[ this.children.length -1 ],
@@ -25,5 +25,3 @@ var Relatives = {
   }
 
 }
-
-exports.Relatives = Relatives
