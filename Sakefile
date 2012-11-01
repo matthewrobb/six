@@ -2,6 +2,13 @@ var fs = require("fs")
 var path = require("path")
 var exec = require("child_process").exec
 
+import { 
+  readFileSync, 
+  readdirSync, 
+  writeFileSync, 
+  watch
+} from "fs"
+
 var launch = (cmd, callback) => {
   var child = exec(cmd, callback)
   child.stdout.pipe(process.stdout)
@@ -34,17 +41,17 @@ var filterPath = __dirname + "/src/filters/"
 var filterOut = __dirname + "/lib/filters/"
 
 task('compile:dot', () => {
-  fs.readdirSync(filterPath).forEach(file => {
+  readdirSync(filterPath).forEach(file => {
     if (path.extname(file) === ".dot") {
-      var source = fs.readFileSync(filterPath + file).toString()
+      var source = readFileSync(filterPath + file).toString()
       source = "exports.filter = " + dot.template(source).toString()
-      fs.writeFileSync(filterOut + file.replace(".dot", ".js"), source, 'utf8')
+      writeFileSync(filterOut + file.replace(".dot", ".js"), source, 'utf8')
     }
   })
 })
 
 task('watch:dot', () => {
-  fs.watch(filterPath, (event, filename) => invoke("compile:dot"))
+  watch(filterPath, (event, filename) => invoke("compile:dot"))
 })
 
 task('compile', () => {
@@ -57,44 +64,63 @@ task('watch', () => {
   invoke('watch:dot')
 })
 
+var Six = require("./lib/six")
+
+task("build:browserrr", () => {
+  
+  console.log(Six.compile(readFileSync("./src/six.six").toString(), {global:true}))
+
+})
+
+import compile from "./lib/six"
+
 task("build:browser", () => {
   var code = ''
 
-  var includes = {
-    'es6': [ "./es6" ],
-    '../node_modules/esprima-six/esprima': [ "esprima-six" ],
-    '../node_modules/escodegen/escodegen': [ "escodegen" ],
-    
-    'filters/egal': [ "./filters/egal" ],
-    'filters/quasi': [ './filters/quasi' ],
-    'filters/class': [ './filters/class' ],
-    'filters': [ '../filters' ],
+  var modules = [
+  
+    { path: "./node_modules/esprima-six/esprima.js", names: [ "esprima-six" ] },
+    { path: "./node_modules/escodegen/escodegen.js", names: [ "escodegen" ] },
+    { path: "./src/es6.six", names: [ "./es6" ] },
 
-    'esom/rel': [ './esom/rel', './rel' ],
-    'esom/trav': [ './esom/trav', './trav' ],
-    'esom/tree': [ './esom/tree', './tree' ],
+    { path: './lib/filters/egal.js', names: [ "./filters/egal" ] },
+    { path: './lib/filters/quasi.js', names: [ './filters/quasi' ] },
+    { path: './lib/filters/class.js', names: [ './filters/class' ] },
+    { path: './src/filters.six', names: [ '../filters' ] },
 
-    'hooks/classes': [ './classes' ],
-    'hooks/forof': [ './forof' ],
-    'hooks/objectpattern': [ './objectpattern' ],
-    'hooks/base': [ './hooks/base' ],
-    
-    'rewriter': [ './rewriter' ],
-    'six': [ './six' ],
-    'browser': [ './browser' ]
+    { path: './src/esom/rel.six', names: [ './esom/rel', './rel' ] },
+    { path: './src/esom/trav.six', names: [ './esom/trav', './trav' ] },
+    { path: './src/esom/tree.six', names: [ './esom/tree', './tree' ] },
+
+    { path: './src/hooks/classes.six', names: [ './classes' ] },
+    { path: './src/hooks/forof.six', names: [ './forof' ] },
+    { path: './src/hooks/objectpattern.six', names: [ './objectpattern' ] },
+    { path: './src/hooks/modules.six', names: [ './modules' ] },
+    { path: './src/hooks/restparams.six', names: [ './restparams' ] },
+    { path: './src/hooks/base.six', names: [ './hooks/base' ] },
+
+    { path: './src/rewriter.six', names: [ './rewriter' ] },
+    { path: './src/six.six', names: [ './six' ] },
+    { path: './src/browser.six', names: [ './browser' ] }
+
+  ]
+
+  for(var { names, path, src } of modules) {
+    code += `
+      ${ names.map( name => `require["${ name }"] = ` ).join("") }
+      new function(){
+        var exports = this;
+        ${
+          (src = readFileSync(path).toString()) &&
+          (src = /six$/.test(path) ? compile(src, { global: true }) : src) ? src : src
+        }
+      };
+    `
   }
-
-  Object.keys(includes).forEach(file => {
-    includes[file].forEach(alias => code += 'require["' + alias + '"] = ')
-    code += 'new function(){'
-    code += '  var exports = this;'
-    code += '  ' + fs.readFileSync("lib/" + file + ".js")
-    code += '};'
-  })
 
   var top = '(function(global) {'
   top += 'var Six = function() {'
-  top += 'function require(path){ return require[path]; }'
+  top += 'function require(path){ return require[path] || {}; }'
 
   code = top + code
 

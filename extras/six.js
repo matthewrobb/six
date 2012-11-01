@@ -1,28 +1,4 @@
-(function(global) {var Six = function() {function require(path){ return require[path]; }require["./es6"] = new function(){  var exports = this;  global.StopIteration = {};
-Object.defineProperties(global.Object, {define: {
-    value: function (target, source) {
-      var desc = {};
-      Object.keys(source).forEach(function (key) {
-        return desc[key] = Object.getOwnPropertyDescriptor(source, key);
-      }.bind(this));
-      Object.defineProperties(target, desc);
-      return target;
-    },
-    enumerable: false,
-    writable: true,
-    configurable: true
-  }});
-Array.prototype.iterator = function () {
-  return {
-    elements: this,
-    index: 0,
-    next: function () {
-      if (this.index >= this.elements.length)
-        throw StopIteration;
-      return this.elements[this.index++];
-    }
-  };
-};};require["esprima-six"] = new function(){  var exports = this;  /*
+(function(global) {var Six = function() {function require(path){ return require[path] || {}; }      require["esprima-six"] =       new function(){        var exports = this;        /*
   Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
   Copyright (C) 2012 Mathias Bynens <mathias@qiwi.be>
   Copyright (C) 2012 Joost-Wim Boekesteijn <joost-wim@boekesteijn.nl>
@@ -57,6 +33,7 @@ Array.prototype.iterator = function () {
 throwError: true, createLiteral: true, generateStatement: true,
 parseAssignmentExpression: true, parseBlock: true,
 parseClassExpression: true, parseClassDeclaration: true, parseExpression: true,
+parseForStatement: true,
 parseFunctionDeclaration: true, parseFunctionExpression: true,
 parseFunctionSourceElements: true, parseVariableIdentifier: true,
 parseImportSpecifier: true,
@@ -107,7 +84,7 @@ parseYieldExpression: true
         NumericLiteral: 6,
         Punctuator: 7,
         StringLiteral: 8,
-        Quasi: 9
+        Template: 9
     };
 
     TokenName = {};
@@ -135,6 +112,8 @@ parseYieldExpression: true
         ClassExpression: 'ClassExpression',
         MethodDefinition: 'MethodDefinition',
         ClassHeritage: 'ClassHeritage',
+        ComprehensionBlock: 'ComprehensionBlock',
+        ComprehensionExpression: 'ComprehensionExpression',
         ConditionalExpression: 'ConditionalExpression',
         ContinueStatement: 'ContinueStatement',
         DebuggerStatement: 'DebuggerStatement',
@@ -165,13 +144,13 @@ parseYieldExpression: true
         Path:  'Path',
         Program: 'Program',
         Property: 'Property',
-        QuasiElement: 'QuasiElement',
-        QuasiLiteral: 'QuasiLiteral',
+        TemplateElement: 'TemplateElement',
+        TemplateLiteral: 'TemplateLiteral',
         ReturnStatement: 'ReturnStatement',
         SequenceExpression: 'SequenceExpression',
         SwitchCase: 'SwitchCase',
         SwitchStatement: 'SwitchStatement',
-        TaggedQuasiExpression: 'TaggedQuasiExpression',
+        TaggedTemplateExpression: 'TaggedTemplateExpression',
         ThisExpression: 'ThisExpression',
         ThrowStatement: 'ThrowStatement',
         TryStatement: 'TryStatement',
@@ -197,7 +176,7 @@ parseYieldExpression: true
         UnexpectedString:  'Unexpected string',
         UnexpectedIdentifier:  'Unexpected identifier',
         UnexpectedReserved:  'Unexpected reserved word',
-        UnexpectedQuasi:  'Unexpected quasi %0',
+        UnexpectedTemplate:  'Unexpected quasi %0',
         UnexpectedEOS:  'Unexpected end of input',
         NewlineAfterThrow:  'Illegal newline after throw',
         InvalidRegExp: 'Invalid regular expression',
@@ -229,7 +208,10 @@ parseYieldExpression: true
         StrictReservedWord:  'Use of future reserved word in strict mode',
         NoFromAfterImport: 'Missing from after import',
         NoYieldInGenerator: 'Missing yield in generator',
-        NoUnintializedConst: 'Const must be initialized'
+        NoUnintializedConst: 'Const must be initialized',
+        ComprehensionRequiresBlock: 'Comprehension must have at least one block',
+        ComprehensionError:  'Comprehension Error',
+        EachNotAllowed:  'Each is not supported'
     };
 
     // See also tools/generate-unicode-regex.py.
@@ -1111,7 +1093,7 @@ parseYieldExpression: true
         };
     }
 
-    function scanQuasi() {
+    function scanTemplate() {
         var cooked = '', ch, start, terminated, tail, restore, unescaped, code, octal;
 
         terminated = false;
@@ -1220,7 +1202,7 @@ parseYieldExpression: true
         }
 
         return {
-            type: Token.Quasi,
+            type: Token.Template,
             value: {
                 cooked: cooked,
                 raw: sliceSource(start + 1, index - ((tail) ? 1 : 2))
@@ -1233,7 +1215,7 @@ parseYieldExpression: true
         };
     }
 
-    function scanQuasiElement(option) {
+    function scanTemplateElement(option) {
         var startsWith;
 
         buffer = null;
@@ -1245,7 +1227,7 @@ parseYieldExpression: true
             throwError({}, Messages.UnexpectedToken, 'ILLEGAL');
         }
 
-        return scanQuasi();
+        return scanTemplate();
     }
 
     function scanRegExp() {
@@ -1376,7 +1358,7 @@ parseYieldExpression: true
         }
 
         if (ch === '`') {
-            return scanQuasi();
+            return scanTemplate();
         }
 
         token = scanIdentifier();
@@ -1534,8 +1516,8 @@ parseYieldExpression: true
             throwError(token, Messages.UnexpectedToken, token.value);
         }
 
-        if (token.type === Token.Quasi) {
-            throwError(token, Messages.UnexpectedQuasi, token.value.raw);
+        if (token.type === Token.Template) {
+            throwError(token, Messages.UnexpectedTemplate, token.value.raw);
         }
 
         // BooleanLiteral, NullLiteral, or Punctuator.
@@ -1647,29 +1629,69 @@ parseYieldExpression: true
     // 11.1.4 Array Initialiser
 
     function parseArrayInitialiser() {
-        var elements = [];
+        var elements = [], blocks = [], filter = null, token, tmp, possiblecomprehension = true, body;
 
         expect('[');
-
         while (!match(']')) {
-            if (match(',')) {
+            token = lookahead();
+            switch (token.value) {
+            case 'for':
+                if (!possiblecomprehension) {
+                    throwError({}, Messages.ComprehensionError);
+                }
+                matchKeyword('for');
+                tmp = parseForStatement({ignore_body: true});
+                tmp.type = Syntax.ComprehensionBlock;
+                if (tmp.left.kind) { // can't be let or const
+                    throwError({}, Messages.ComprehensionError);
+                }
+                blocks.push(tmp);
+                break;
+            case 'if':
+                if (!possiblecomprehension) {
+                    throwError({}, Messages.ComprehensionError);
+                }
+                expectKeyword('if');
+                expect('(');
+                filter = parseExpression();
+                expect(')');
+                break;
+            case ',':
+                possiblecomprehension = false; // no longer allowed.
                 lex();
                 elements.push(null);
-            } else {
+                break;
+            default:
                 elements.push(parseAssignmentExpression());
-
-                if (!match(']')) {
-                    expect(',');
+                if (!(match(']') || matchKeyword('for') || matchKeyword('if'))) {
+                    expect(','); // this lexes.
+                    possiblecomprehension = false;
                 }
             }
         }
 
         expect(']');
 
-        return {
-            type: Syntax.ArrayExpression,
-            elements: elements
-        };
+        if (filter && !blocks.length) {
+            throwError({}, Messages.ComprehensionRequiresBlock);
+        }
+
+        if (blocks.length) {
+            if (elements.length !== 1) {
+                throwError({}, Messages.ComprehensionError);
+            }
+            return {
+                type:  Syntax.ComprehensionExpression,
+                filter: filter,
+                blocks: blocks,
+                body: elements[0]
+            };
+        } else {
+            return {
+                type: Syntax.ArrayExpression,
+                elements: elements
+            };
+        }
     }
 
     // 11.1.5 Object Initialiser
@@ -1916,13 +1938,13 @@ parseYieldExpression: true
         };
     }
 
-    function parseQuasiElement(option) {
-        var token = scanQuasiElement(option);
+    function parseTemplateElement(option) {
+        var token = scanTemplateElement(option);
         if (strict && token.octal) {
             throwError(token, Messages.StrictOctalLiteral);
         }
         return {
-            type: Syntax.QuasiElement,
+            type: Syntax.TemplateElement,
             value: {
                 raw: token.value.raw,
                 cooked: token.value.cooked
@@ -1931,21 +1953,21 @@ parseYieldExpression: true
         };
     }
 
-    function parseQuasiLiteral() {
+    function parseTemplateLiteral() {
         var quasi, quasis, expressions;
 
-        quasi = parseQuasiElement({ head: true });
+        quasi = parseTemplateElement({ head: true });
         quasis = [ quasi ];
         expressions = [];
 
         while (!quasi.tail) {
             expressions.push(parseExpression());
-            quasi = parseQuasiElement({ head: false });
+            quasi = parseTemplateElement({ head: false });
             quasis.push(quasi);
         }
 
         return {
-            type: Syntax.QuasiLiteral,
+            type: Syntax.TemplateLiteral,
             quasis: quasis,
             expressions: expressions
         };
@@ -2029,8 +2051,8 @@ parseYieldExpression: true
             return createLiteral(scanRegExp());
         }
 
-        if (type === Token.Quasi) {
-            return parseQuasiLiteral();
+        if (type === Token.Template) {
+            return parseTemplateLiteral();
         }
 
         return throwUnexpected(lex());
@@ -2095,11 +2117,11 @@ parseYieldExpression: true
         return expr;
     }
 
-    function parseTaggedQuasi(tag) {
+    function parseTaggedTemplate(tag) {
         return {
-            type: Syntax.TaggedQuasiExpression,
+            type: Syntax.TaggedTemplateExpression,
             tag: tag,
-            quasi: parseQuasiLiteral()
+            quasi: parseTemplateLiteral()
         };
     }
 
@@ -2143,8 +2165,8 @@ parseYieldExpression: true
                 expr = parseComputedMember(expr);
             } else if (match('(')) {
                 expr = parseCallMember(expr);
-            } else if (lookahead().type === Token.Quasi) {
-                expr = parseTaggedQuasi(expr);
+            } else if (lookahead().type === Token.Template) {
+                expr = parseTaggedTemplate(expr);
             } else {
                 break;
             }
@@ -2165,8 +2187,8 @@ parseYieldExpression: true
                 expr = parseNonComputedMember(expr);
             } else if (match('[')) {
                 expr = parseComputedMember(expr);
-            } else if (lookahead().type === Token.Quasi) {
-                expr = parseTaggedQuasi(expr);
+            } else if (lookahead().type === Token.Template) {
+                expr = parseTaggedTemplate(expr);
             } else {
                 break;
             }
@@ -2676,6 +2698,9 @@ parseYieldExpression: true
         if (match('{')) {
             id = parseObjectInitialiser();
             reinterpretAsAssignmentBindingPattern(id);
+        } else if (match('[')) {
+            id = parseArrayInitialiser();
+            reinterpretAsAssignmentBindingPattern(id);
         } else {
             id = parseVariableIdentifier();
             // 12.2.1
@@ -3107,12 +3132,15 @@ parseYieldExpression: true
         };
     }
 
-    function parseForStatement() {
+    function parseForStatement(opts) {
         var init, test, update, left, right, body, operator, oldInIteration;
-
         init = test = update = null;
-
         expectKeyword('for');
+
+        // http://wiki.ecmascript.org/doku.php?id=proposals:iterators_and_generators&s=each
+        if (matchContextualKeyword("each")) {
+            throwError({}, Messages.EachNotAllowed);
+        }
 
         expect('(');
 
@@ -3179,7 +3207,11 @@ parseYieldExpression: true
         oldInIteration = state.inIteration;
         state.inIteration = true;
 
-        body = parseStatement();
+        if (opts !== undefined && opts.ignore_body) {
+            // no body
+        } else {
+            body = parseStatement();
+        }
 
         state.inIteration = oldInIteration;
 
@@ -4497,6 +4529,39 @@ parseYieldExpression: true
         };
     }
 
+    function createLocationMarker() {
+        var marker = {};
+
+        marker.range = [index, index];
+        marker.loc = {
+            start: {
+                line: lineNumber,
+                column: index - lineStart
+            },
+            end: {
+                line: lineNumber,
+                column: index - lineStart
+            }
+        };
+
+        marker.end = function () {
+            this.range[1] = index;
+            this.loc.end.line = lineNumber;
+            this.loc.end.column = index - lineStart;
+        };
+
+        marker.apply = function (node) {
+            if (extra.range) {
+                node.range = this.range;
+            }
+            if (extra.loc) {
+                node.loc = this.loc;
+            }
+        };
+
+        return marker;
+    }
+
     function wrapTrackingFunction(range, loc) {
 
         return function (parseFunction) {
@@ -4526,58 +4591,46 @@ parseYieldExpression: true
             }
 
             return function () {
-                var node, rangeInfo, locInfo;
+                var marker, node;
 
                 skipComment();
-                rangeInfo = [index, 0];
-                locInfo = {
-                    start: {
-                        line: lineNumber,
-                        column: index - lineStart
-                    }
-                };
 
+                marker = createLocationMarker();
                 node = parseFunction.apply(null, arguments);
-                if (typeof node !== 'undefined') {
+                marker.end();
 
-                    if (range && typeof node.range === 'undefined') {
-                        rangeInfo[1] = index;
-                        node.range = rangeInfo;
-                    }
-
-                    if (loc && typeof node.loc === 'undefined') {
-                        locInfo.end = {
-                            line: lineNumber,
-                            column: index - lineStart
-                        };
-                        node.loc = locInfo;
-                    }
-
-                    if (isBinary(node)) {
-                        visit(node);
-                    }
-
-                    if (node.type === Syntax.MemberExpression) {
-                        if (typeof node.object.range !== 'undefined') {
-                            node.range[0] = node.object.range[0];
-                        }
-                        if (typeof node.object.loc !== 'undefined') {
-                            node.loc.start = node.object.loc.start;
-                        }
-                    }
-
-                    if (node.type === Syntax.CallExpression) {
-                        if (typeof node.callee.range !== 'undefined') {
-                            node.range[0] = node.callee.range[0];
-                        }
-                        if (typeof node.callee.loc !== 'undefined') {
-                            node.loc.start = node.callee.loc.start;
-                        }
-                    }
-                    return node;
+                if (range && typeof node.range === 'undefined') {
+                    marker.apply(node);
                 }
-            };
 
+                if (loc && typeof node.loc === 'undefined') {
+                    marker.apply(node);
+                }
+
+                if (isBinary(node)) {
+                    visit(node);
+                }
+
+                if (node.type === Syntax.MemberExpression) {
+                    if (typeof node.object.range !== 'undefined') {
+                        node.range[0] = node.object.range[0];
+                    }
+                    if (typeof node.object.loc !== 'undefined') {
+                        node.loc.start = node.object.loc.start;
+                    }
+                }
+
+                if (node.type === Syntax.CallExpression) {
+                    if (typeof node.callee.range !== 'undefined') {
+                        node.range[0] = node.callee.range[0];
+                    }
+                    if (typeof node.callee.loc !== 'undefined') {
+                        node.loc.start = node.callee.loc.start;
+                    }
+                }
+
+                return node;
+            };
         };
     }
 
@@ -4638,12 +4691,12 @@ parseYieldExpression: true
             extra.parseProgram = parseProgram;
             extra.parsePropertyFunction = parsePropertyFunction;
             extra.parseRelationalExpression = parseRelationalExpression;
-            extra.parseQuasiElement = parseQuasiElement;
-            extra.parseQuasiLiteral = parseQuasiLiteral;
+            extra.parseTemplateElement = parseTemplateElement;
+            extra.parseTemplateLiteral = parseTemplateLiteral;
             extra.parseStatement = parseStatement;
             extra.parseShiftExpression = parseShiftExpression;
             extra.parseSwitchCase = parseSwitchCase;
-            extra.parseTaggedQuasi = parseTaggedQuasi;
+            extra.parseTaggedTemplate = parseTaggedTemplate;
             extra.parseUnaryExpression = parseUnaryExpression;
             extra.parseVariableDeclaration = parseVariableDeclaration;
             extra.parseVariableIdentifier = parseVariableIdentifier;
@@ -4690,13 +4743,13 @@ parseYieldExpression: true
             parsePrimaryExpression = wrapTracking(extra.parsePrimaryExpression);
             parseProgram = wrapTracking(extra.parseProgram);
             parsePropertyFunction = wrapTracking(extra.parsePropertyFunction);
-            parseQuasiElement = wrapTracking(extra.parseQuasiElement);
-            parseQuasiLiteral = wrapTracking(extra.parseQuasiLiteral);
+            parseTemplateElement = wrapTracking(extra.parseTemplateElement);
+            parseTemplateLiteral = wrapTracking(extra.parseTemplateLiteral);
             parseRelationalExpression = wrapTracking(extra.parseRelationalExpression);
             parseStatement = wrapTracking(extra.parseStatement);
             parseShiftExpression = wrapTracking(extra.parseShiftExpression);
             parseSwitchCase = wrapTracking(extra.parseSwitchCase);
-            parseTaggedQuasi = wrapTracking(extra.parseTaggedQuasi);
+            parseTaggedTemplate = wrapTracking(extra.parseTaggedTemplate);
             parseUnaryExpression = wrapTracking(extra.parseUnaryExpression);
             parseVariableDeclaration = wrapTracking(extra.parseVariableDeclaration);
             parseVariableIdentifier = wrapTracking(extra.parseVariableIdentifier);
@@ -4763,13 +4816,13 @@ parseYieldExpression: true
             parsePrimaryExpression = extra.parsePrimaryExpression;
             parseProgram = extra.parseProgram;
             parsePropertyFunction = extra.parsePropertyFunction;
-            parseQuasiElement = extra.parseQuasiElement;
-            parseQuasiLiteral = extra.parseQuasiLiteral;
+            parseTemplateElement = extra.parseTemplateElement;
+            parseTemplateLiteral = extra.parseTemplateLiteral;
             parseRelationalExpression = extra.parseRelationalExpression;
             parseStatement = extra.parseStatement;
             parseShiftExpression = extra.parseShiftExpression;
             parseSwitchCase = extra.parseSwitchCase;
-            parseTaggedQuasi = extra.parseTaggedQuasi;
+            parseTaggedTemplate = extra.parseTaggedTemplate;
             parseUnaryExpression = extra.parseUnaryExpression;
             parseVariableDeclaration = extra.parseVariableDeclaration;
             parseVariableIdentifier = extra.parseVariableIdentifier;
@@ -4903,7 +4956,7 @@ parseYieldExpression: true
 
 }));
 /* vim: set sw=4 ts=4 et tw=80 : */
-};require["escodegen"] = new function(){  var exports = this;  /*
+      };          require["escodegen"] =       new function(){        var exports = this;        /*
   Copyright (C) 2012 Michael Ficarra <escodegen.copyright@michael.ficarra.me>
   Copyright (C) 2012 Robert Gust-Bardon <donate@robert.gust-bardon.org>
   Copyright (C) 2012 John Freeman <jfreeman08@gmail.com>
@@ -6864,17 +6917,41 @@ parseYieldExpression: true
 
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */
-};require["./filters/egal"] = new function(){  var exports = this;  exports.filter = function anonymous(it) {
+      };          require["./es6"] =       new function(){        var exports = this;        global.StopIteration = {};
+Object.defineProperties(global.Object, {define: {
+    value: function (target, source) {
+      var desc = {};
+      Object.keys(source).forEach(function (key) {
+        return desc[key] = Object.getOwnPropertyDescriptor(source, key);
+      }.bind(this));
+      Object.defineProperties(target, desc);
+      return target;
+    },
+    enumerable: false,
+    writable: true,
+    configurable: true
+  }});
+Array.prototype.iterator = function () {
+  return {
+    elements: this,
+    index: 0,
+    next: function () {
+      if (this.index >= this.elements.length)
+        throw StopIteration;
+      return this.elements[this.index++];
+    }
+  };
+};      };          require["./filters/egal"] =       new function(){        var exports = this;        exports.filter = function anonymous(it) {
 var out='('+( it.ast.operator === "isnt" ? "!" : "" )+'function ( x, y ) {return (x === y)?( x !== 0 || 1/x === 1/y ) : ( x !== x && y !==y )}( '+( it.first().compile() )+', '+( it.last().compile() )+' ))';return out;
-}};require["./filters/quasi"] = new function(){  var exports = this;  exports.filter = function anonymous(it) {
+}      };          require["./filters/quasi"] =       new function(){        var exports = this;        exports.filter = function anonymous(it) {
 var out='';var cooked = [], raw = [];var arr1=it.quasis.node.children;if(arr1){var child,index=-1,l1=arr1.length-1;while(index<l1){child=arr1[index+=1];out+=' ';raw.push(child.ast.value.raw);out+=' ';cooked.push(child.ast.value.cooked);} } out+='(function(__quasi__){ var rawStrs = __quasi__[\'cooked\']; var out = []; for (var i = 0, k = -1, n = rawStrs.length; i < n;) { out[++k] = rawStrs[i]; out[++k] = arguments[++i]; } return out.join(\'\');})('+( JSON.stringify({cooked:cooked, raw:raw}));if(it.expressions && it.expressions.node && it.expressions.node.children.length){out+=' ';var arr2=it.expressions.node.children;if(arr2){var exp,index=-1,l2=arr2.length-1;while(index<l2){exp=arr2[index+=1];out+=' ,'+(exp.compile())+' ';} } }out+=')';return out;
-}};require["./filters/class"] = new function(){  var exports = this;  exports.filter = function anonymous(it) {
+}      };          require["./filters/class"] =       new function(){        var exports = this;        exports.filter = function anonymous(it) {
 var out=''; var id = it.id ? it.id.compile() : "_Class";  var dec = it.type === "ClassDeclaration"; if(dec){out+='var '+( id)+' =';}out+='(function(';if(it.superClass){out+='_super';}out+=') {';if(it.superClass){out+='function __ctor() { this.constructor = '+( id)+'; }__ctor.prototype = _super.prototype;'+( id)+'.prototype = new __ctor();'+( id)+'.__super__ = _super.prototype;';}out+='function '+( id)+'(';if(it.constructor){if(it.constructor.value.params && it.constructor.value.params.ast){out+=( it.constructor.value.params.compile() );}out+=')'+( it.constructor.value.body.compile() );}else{out+='){}';}var arr1=it.methods;if(arr1){var method,index=-1,l1=arr1.length-1;while(index<l1){method=arr1[index+=1];var params = method.value.params && method.value.params.ast;if(method.kind === 'set' || method.kind === 'get'){out+='Object.defineProperty('+( id)+'.prototype, "'+( method.key.compile() )+'", {configurable: true,enumerable: true,'+( method.kind )+': function(';if(params){out+=( method.value.params.compile() );}out+=')'+( method.value.body.compile() )+'});';}else{out+=( id)+'.prototype.'+( method.key.compile() )+' = function(';if(params){out+=( method.value.params.compile() );}out+=')'+( method.value.body.compile() )+';';}} } out+='return '+( id )+';})(';if(it.superClass){out+=( it.superClass.compile());}out+=')';if(dec){out+=';';}return out;
-}};require["../filters"] = new function(){  var exports = this;  var filters = exports.filters = {
+}      };          require["../filters"] =       new function(){        var exports = this;        var filters = exports.filters = {
     egal: require("./filters/egal").filter,
     quasi: require("./filters/quasi").filter,
     "class": require("./filters/class").filter
-  };};require["./esom/rel"] = require["./rel"] = new function(){  var exports = this;  var Relatives = {
+  };      };          require["./esom/rel"] = require["./rel"] =       new function(){        var exports = this;        var Relatives = exports.Relatives = {
     first: function () {
       return this.children[0];
     },
@@ -6898,8 +6975,7 @@ var out=''; var id = it.id ? it.id.compile() : "_Class";  var dec = it.type === 
       }.bind(this));
       return deepest;
     }
-  };
-exports.Relatives = Relatives;};require["./esom/trav"] = require["./trav"] = new function(){  var exports = this;  var queryPat = /((?:[\>|\+][\s]*)?(?=[\w|\.])(?:[A-Za-z]+)?(?:\.[A-Za-z]+)?(?:\[[\w]+(?:(?:[*|^|$]?=?(?!\]))(?:[0-9]+(?=\]))?(?:['"][\w]+['"](?=\]))?(?:true|false(?=\]))?)?\])*(?:\:(?!$)(?:[\w]+)(?:\((?:[\s\S]+)\))?)*)/g;
+  };      };          require["./esom/trav"] = require["./trav"] =       new function(){        var exports = this;        var queryPat = /((?:[\>|\+][\s]*)?(?=[\w|\.])(?:[A-Za-z]+)?(?:\.[A-Za-z]+)?(?:\[[\w]+(?:(?:[*|^|$]?=?(?!\]))(?:[0-9]+(?=\]))?(?:['"][\w]+['"](?=\]))?(?:true|false(?=\]))?)?\])*(?:\:(?!$)(?:[\w]+)(?:\((?:[\s\S]+)\))?)*)/g;
 var queryMatch = /^(?:([\>|\+])[\s]*)?(?=[\w|\.])([A-Za-z]+)?(?:\.([A-Za-z]+))?((?:\[[\w]+(?:(?:[*|^|$]?=?(?!\]))(?:[0-9]+(?=\]))?(?:['"][\w]+['"](?=\]))?(?:true|false(?=\]))?)?\])*)((?:\:(?!$)(?:[\w]+)(?:\((?:[\s\S]+)\))?)*)$/;
 var attrPat = /^([\w]+)(?:(?:([*|^|$]?=)?(?!\]))(?:([0-9]+)(?=\]))?(?:['"]([\w]+)['"](?=\]))?(?:(true|false)(?=\]))?)?\]$/;
 function parse(selector) {
@@ -6979,7 +7055,7 @@ var Query = function () {
     };
     return Query;
   }();
-var Traversal = {
+var Traversal = exports.Traversal = {
     select: function (query, frags) {
       var results = [];
       var sels = query.match(queryPat);
@@ -7064,12 +7140,11 @@ var Traversal = {
       return match;
     }
   };
-Object.define(Traversal, require("./rel").Relatives);
-exports.Traversal = Traversal;};require["./esom/tree"] = require["./tree"] = new function(){  var exports = this;  var esprima = require("esprima-six");
+Object.define(Traversal, require("./rel").Relatives);      };          require["./esom/tree"] = require["./tree"] =       new function(){        var exports = this;        var esprima = require("esprima-six");
 var parse = esprima.parse;
 var Syntax = esprima.Syntax;
 var Tree = function () {
-    function Tree(source) {
+    function Tree(source, options) {
       var ast = parse(source, {range: true});
       var children = [];
       Object.define(this, {
@@ -7089,7 +7164,9 @@ var Tree = function () {
         key: "root",
         type: "Node"
       }));
-      return children[0];
+      var node = children[0];
+      node.global = options && options.global;
+      return node;
     }
     Tree.prototype.create = function (base) {
       var node = Object.create(this.root);
@@ -7115,7 +7192,13 @@ var Tree = function () {
           return parent;
         },
         get children() {
-          return children.slice(0);
+          return children;
+        },
+        unshift: function (node) {
+          children.unshift(node);
+        },
+        push: function (node) {
+          children.push(node);
         }
       });
       return node;
@@ -7134,6 +7217,18 @@ var Tree = function () {
         }
       }.bind(this));
     };
+    Tree.prototype.visitByType = function (typeCallbacks) {
+      this.children.forEach(function (child) {
+        if (!child.ast) {
+          return;
+        }
+        var callback = typeCallbacks[child.ast.type];
+        if (callback) {
+          callback(child);
+        }
+        child.visitByType(typeCallbacks);
+      }.bind(this));
+    };
     Tree.prototype.raw = function () {
       return this.source.substring(this.ast.range[0], this.ast.range[1]);
     };
@@ -7145,11 +7240,11 @@ var Tree = function () {
     };
     return Tree;
   }();
-Object.define(Tree, {create: function (src) {
-    return new this(src);
+Object.define(Tree, {create: function (src, options) {
+    return new this(src, options);
   }});
 Object.define(Tree.prototype, require("./trav").Traversal);
-exports.Tree = Tree;};require["./classes"] = new function(){  var exports = this;  var filters = require("../filters").filters;
+exports.Tree = Tree;      };          require["./classes"] =       new function(){        var exports = this;        var filters = require("../filters").filters;
 function ClassRewrite(node) {
   var ctx = node.context();
   var constructor;
@@ -7246,7 +7341,7 @@ Object.define(exports, {
       }, args.node ? "," + args : "");
     }.bind(this);
   }.bind(this)
-});};require["./forof"] = new function(){  var exports = this;  var hooks = {".ForOfStatement": function (node) {
+});      };          require["./forof"] =       new function(){        var exports = this;        var hooks = {".ForOfStatement": function (node) {
       node.compile = function () {
         var context = node.context();
         var right = context.right.compile();
@@ -7327,7 +7422,7 @@ Object.define(exports, {
         }, dec ? "var " + decs.join(", ") + ";" : "", left, body, right);
       }.bind(this);
     }.bind(this)};
-Object.define(exports, hooks);};require["./objectpattern"] = new function(){  var exports = this;  var hooks = {".VariableDeclarator > id.ObjectPattern": function (node) {
+Object.define(exports, hooks);      };          require["./objectpattern"] =       new function(){        var exports = this;        var hooks = {".VariableDeclarator > id.ObjectPattern": function (node) {
       node.properties = function () {
         var ctx = node.parent.context();
         var props = [];
@@ -7420,7 +7515,394 @@ Object.define(exports, hooks);};require["./objectpattern"] = new function(){  va
         return node.assemble(node.parent.context().init.compile());
       }.bind(this);
     }.bind(this)};
-Object.define(exports, hooks);};require["./hooks/base"] = new function(){  var exports = this;  var generate = require("escodegen").generate;
+Object.define(exports, hooks);      };          require["./modules"] =       new function(){        var exports = this;        var existsSync = require("fs").existsSync;
+var sep = require("path").sep;
+var hooks = {
+    ".ModuleDeclaration": function (node) {
+      var compile = node.compile;
+      node.compile = function () {
+        var ret = "var ";
+        var ctx = node.context();
+        var from = ctx.from;
+        if (!from)
+          return compile.call(node);
+        if (function (x, y) {
+            return x === y ? x !== 0 || 1 / x === 1 / y : x !== x && y !== y;
+          }(from.type, "Literal")) {
+          var modRoot = from.value;
+          return function (__quasi__) {
+            var rawStrs = __quasi__["cooked"];
+            var out = [];
+            for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+              out[++k] = rawStrs[i];
+              out[++k] = arguments[++i];
+            }
+            return out.join("");
+          }({
+            "cooked": [
+              "var ",
+              " = require(\"",
+              "\");"
+            ],
+            "raw": [
+              "var ",
+              " = require(\"",
+              "\");"
+            ]
+          }, ctx.id.name, modRoot);
+        } else {
+          var modRoot = from.compile();
+          return function (__quasi__) {
+            var rawStrs = __quasi__["cooked"];
+            var out = [];
+            for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+              out[++k] = rawStrs[i];
+              out[++k] = arguments[++i];
+            }
+            return out.join("");
+          }({
+            "cooked": [
+              "var ",
+              " = ",
+              ";"
+            ],
+            "raw": [
+              "var ",
+              " = ",
+              ";"
+            ]
+          }, ctx.id.name, modRoot);
+        }
+      }.bind(this);
+    }.bind(this),
+    ".ImportDeclaration": function (node) {
+      node.compile = function () {
+        var ret = "var ";
+        var ctx = node.context();
+        var from = ctx.from;
+        if (function (x, y) {
+            return x === y ? x !== 0 || 1 / x === 1 / y : x !== x && y !== y;
+          }(from.type, "Literal")) {
+          var modRoot = from.value;
+          var modVarName = modRoot.replace(/[\/\.]/g, "_");
+          modRoot = function (__quasi__) {
+            var rawStrs = __quasi__["cooked"];
+            var out = [];
+            for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+              out[++k] = rawStrs[i];
+              out[++k] = arguments[++i];
+            }
+            return out.join("");
+          }({
+            "cooked": [
+              "require(\"",
+              "\")"
+            ],
+            "raw": [
+              "require(\"",
+              "\")"
+            ]
+          }, modRoot);
+        } else {
+          from = from.context().body.node;
+          var modNames = from.children.map(function (path) {
+              return path.name;
+            }.bind(this));
+          var modVarName = modNames.join("_");
+          var modRoot = from.compile();
+        }
+        var specifiers = ctx.specifiers.node.children;
+        if (function (x, y) {
+            return x === y ? x !== 0 || 1 / x === 1 / y : x !== x && y !== y;
+          }(specifiers.length, 1)) {
+          modVarName = modRoot;
+        } else {
+          ret += function (__quasi__) {
+            var rawStrs = __quasi__["cooked"];
+            var out = [];
+            for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+              out[++k] = rawStrs[i];
+              out[++k] = arguments[++i];
+            }
+            return out.join("");
+          }({
+            "cooked": [
+              "",
+              " = ",
+              ""
+            ],
+            "raw": [
+              "",
+              " = ",
+              ""
+            ]
+          }, modVarName, modRoot);
+        }
+        specifiers.forEach(function (spec) {
+          if (specifiers.length > 1)
+            ret += ", ";
+          var ctx = spec.context();
+          if (function (x, y) {
+              return x === y ? x !== 0 || 1 / x === 1 / y : x !== x && y !== y;
+            }(ctx.type, "ImportSpecifier")) {
+            var name = ctx.id.name;
+            var from = ctx.from ? ctx.from.node.children[0].ast[0].name : name;
+            ret += function (__quasi__) {
+              var rawStrs = __quasi__["cooked"];
+              var out = [];
+              for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+                out[++k] = rawStrs[i];
+                out[++k] = arguments[++i];
+              }
+              return out.join("");
+            }({
+              "cooked": [
+                "",
+                " = ",
+                ".",
+                ""
+              ],
+              "raw": [
+                "",
+                " = ",
+                ".",
+                ""
+              ]
+            }, from, modVarName, name);
+          } else {
+            ret += function (__quasi__) {
+              var rawStrs = __quasi__["cooked"];
+              var out = [];
+              for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+                out[++k] = rawStrs[i];
+                out[++k] = arguments[++i];
+              }
+              return out.join("");
+            }({
+              "cooked": [
+                "",
+                " = ",
+                ".",
+                ""
+              ],
+              "raw": [
+                "",
+                " = ",
+                ".",
+                ""
+              ]
+            }, ctx.name, modVarName, ctx.name);
+          }
+        }.bind(this));
+        return ret + ";";
+      }.bind(this);
+    }.bind(this),
+    ".ExportDeclaration": function (node) {
+      var ctx = node.context();
+      node.compile = function () {
+        var declaration = ctx.declaration;
+        if (!declaration) {
+          var ret = "";
+          ctx.specifiers.node.children.forEach(function (value) {
+            var name = value.context().id.name;
+            ret += function (__quasi__) {
+              var rawStrs = __quasi__["cooked"];
+              var out = [];
+              for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+                out[++k] = rawStrs[i];
+                out[++k] = arguments[++i];
+              }
+              return out.join("");
+            }({
+              "cooked": [
+                "exports.",
+                " = ",
+                ";"
+              ],
+              "raw": [
+                "exports.",
+                " = ",
+                ";"
+              ]
+            }, name, name);
+          }.bind(this));
+          return ret;
+        }
+        var exportee = declaration;
+        switch (exportee.type) {
+        case "FunctionDeclaration":
+          var name = exportee.id.name;
+          return function (__quasi__) {
+            var rawStrs = __quasi__["cooked"];
+            var out = [];
+            for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+              out[++k] = rawStrs[i];
+              out[++k] = arguments[++i];
+            }
+            return out.join("");
+          }({
+            "cooked": [
+              "var ",
+              " = exports.",
+              " = function("
+            ],
+            "raw": [
+              "var ",
+              " = exports.",
+              " = function("
+            ]
+          }, name, name) + (exportee.params[0] ? exportee.params.compile() : "") + function (__quasi__) {
+            var rawStrs = __quasi__["cooked"];
+            var out = [];
+            for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+              out[++k] = rawStrs[i];
+              out[++k] = arguments[++i];
+            }
+            return out.join("");
+          }({
+            "cooked": [
+              ") ",
+              ";\n"
+            ],
+            "raw": [
+              ") ",
+              ";\\n"
+            ]
+          }, exportee.body.compile());
+        case "VariableDeclaration":
+          var ret = "";
+          exportee.declarations.children.forEach(function (value, idx) {
+            var declaration = value.context();
+            var name = declaration.id.name;
+            ret += function (__quasi__) {
+              var rawStrs = __quasi__["cooked"];
+              var out = [];
+              for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+                out[++k] = rawStrs[i];
+                out[++k] = arguments[++i];
+              }
+              return out.join("");
+            }({
+              "cooked": [
+                "var ",
+                " = exports.",
+                " = "
+              ],
+              "raw": [
+                "var ",
+                " = exports.",
+                " = "
+              ]
+            }, name, name) + (declaration.init ? declaration.init.compile() : "null") + ";\n";
+          }.bind(this));
+          return ret;
+        case "ModuleDeclaration":
+          var from = exportee.from;
+          if (from) {
+            var name = exportee.id.name;
+            if (function (x, y) {
+                return x === y ? x !== 0 || 1 / x === 1 / y : x !== x && y !== y;
+              }(from.type, "Literal")) {
+              var modRoot = from.value;
+              return function (__quasi__) {
+                var rawStrs = __quasi__["cooked"];
+                var out = [];
+                for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+                  out[++k] = rawStrs[i];
+                  out[++k] = arguments[++i];
+                }
+                return out.join("");
+              }({
+                "cooked": [
+                  "var ",
+                  " = exports.",
+                  " = require(\"",
+                  "\");"
+                ],
+                "raw": [
+                  "var ",
+                  " = exports.",
+                  " = require(\"",
+                  "\");"
+                ]
+              }, name, name, modRoot);
+            } else {
+              var modRoot = fromcompile();
+              return function (__quasi__) {
+                var rawStrs = __quasi__["cooked"];
+                var out = [];
+                for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+                  out[++k] = rawStrs[i];
+                  out[++k] = arguments[++i];
+                }
+                return out.join("");
+              }({
+                "cooked": [
+                  "var ",
+                  " = exports.",
+                  " = ",
+                  ";"
+                ],
+                "raw": [
+                  "var ",
+                  " = exports.",
+                  " = ",
+                  ";"
+                ]
+              }, name, name, modRoot);
+            }
+          }
+        default:
+          return ctx.declaration.compile();
+        }
+      }.bind(this);
+    }.bind(this)
+  };
+Object.define(exports, hooks);      };          require["./restparams"] =       new function(){        var exports = this;        var hooks = {".FunctionDeclaration": function (node) {
+      var ctx = node.context();
+      if (!ctx.params.node)
+        return;
+      var params = ctx.params.node.children;
+      var lastIdx = params.length - 1;
+      var lastParam = params[lastIdx];
+      if (lastParam.ast.type === "RestParameter") {
+        var restParamName = lastParam.ast.value.name;
+        params.pop();
+        ctx.params.node.compile = function () {
+          return params.map(function (p) {
+            return p.context().name;
+          }.bind(this)).join(", ");
+        }.bind(this);
+        ctx.body.body.unshift({
+          raw: function () {
+            return "";
+          },
+          compile: function () {
+            return function (__quasi__) {
+              var rawStrs = __quasi__["cooked"];
+              var out = [];
+              for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+                out[++k] = rawStrs[i];
+                out[++k] = arguments[++i];
+              }
+              return out.join("");
+            }({
+              "cooked": [
+                "var ",
+                " = [].slice.call(arguments, ",
+                ");"
+              ],
+              "raw": [
+                "var ",
+                " = [].slice.call(arguments, ",
+                ");"
+              ]
+            }, restParamName, lastIdx);
+          }
+        });
+      }
+    }.bind(this)};
+Object.define(exports, hooks);      };          require["./hooks/base"] =       new function(){        var exports = this;        var generate = require("escodegen").generate;
 var filters = require("../filters").filters;
 function iterator() {
   return {
@@ -7443,17 +7925,21 @@ var hooks = {
       var compile = node.compile;
       node.compile = function () {
         var src = compile.call(node);
-        return generate(node.constructor.create(src).ast, {
-          format: {
-            indent: {
-              style: "  ",
-              base: 0
+        var body = generate(node.constructor.create(src).ast, {
+            format: {
+              indent: {
+                style: "  ",
+                base: node.global ? 0 : 1
+              },
+              quotes: "double",
+              compact: false
             },
-            quotes: "double",
-            compact: false
-          },
-          comment: true
-        });
+            comment: true
+          });
+        if (!node.global) {
+          body = "if (typeof exports === 'object' && typeof define !== 'function') {\n" + "  var define = function (factory) {\n" + "    factory(require, exports);\n" + "  };\n" + "}\n" + "define(function (require, exports) {\n" + body + "\n});";
+        }
+        return body;
       }.bind(this);
     }.bind(this),
     ".ArrowFunctionExpression": function (node) {
@@ -7553,7 +8039,7 @@ var hooks = {
         return filters.egal(node);
       }.bind(this);
     }.bind(this),
-    ".QuasiLiteral": function (node) {
+    ".TemplateLiteral": function (node) {
       node.compile = function () {
         return filters.quasi(node.context());
       }.bind(this);
@@ -7563,32 +8049,56 @@ Array.prototype.map.call([
   hooks,
   "./classes",
   "./forof",
-  "./objectpattern"
+  "./objectpattern",
+  "./modules",
+  "./restparams"
 ], function (hook) {
   Object.define(exports, typeof hook === "string" ? require(hook) : hook);
 }.bind(this));
 Object.defineProperty(exports, "iterator", {
   value: iterator,
   enumerable: false
-});};require["./rewriter"] = new function(){  var exports = this;  require("./es6");
+});      };          require["./rewriter"] =       new function(){        var exports = this;        require("./es6");
 var Tree = require("./esom/tree").Tree;
 var hooks = require("./hooks/base");
-function rewrite(src) {
-  var program = Tree.create(src);
-  var selector, hook;
+var visitors = {};
+function optimizeHooks() {
+  var sels = Object.keys(hooks);
+  var optimizable = /^\.[a-zA-Z]+$/;
+  var sel;
   void function (_iterator) {
     try {
       while (true) {
-        selector = _iterator.next(), hook = selector.value, selector = selector.key;
-        program.root.select(selector).forEach(hook);
+        sel = _iterator.next();
+        if (optimizable.exec(sel)) {
+          visitors[sel.substring(1)] = hooks[sel];
+          delete hooks[sel];
+        }
       }
     } catch (e) {
       if (e !== StopIteration)
         throw e;
     }
-  }.call(this, hooks.iterator());
-  return program.compile();
+  }.call(this, sels.iterator());
 }
+optimizeHooks();
+var rewrite = exports.rewrite = function (src, options) {
+    var program = Tree.create(src, options);
+    var selector, hook;
+    void function (_iterator) {
+      try {
+        while (true) {
+          selector = _iterator.next(), hook = selector.value, selector = selector.key;
+          program.root.select(selector).forEach(hook);
+        }
+      } catch (e) {
+        if (e !== StopIteration)
+          throw e;
+      }
+    }.call(this, hooks.iterator());
+    program.root.visitByType(visitors);
+    return program.compile();
+  };
 Object.define(Tree.prototype, {
   compile: function () {
     var src = this.raw();
@@ -7630,37 +8140,42 @@ var Context = function () {
       return stack;
     }
     return Context;
-  }();
-exports.rewrite = rewrite;};require["./six"] = new function(){  var exports = this;  var fs = require("fs");
+  }();      };          require["./six"] =       new function(){        var exports = this;        var fs = require("fs");
 var path = require("path");
 var rewrite = require("./rewriter").rewrite;
-function run(code, options) {
-  var mainModule = require.main;
-  if (!options)
-    options = {};
-  mainModule.filename = process.argv[1] = options.filename ? fs.realpathSync(options.filename) : ".";
-  mainModule.moduleCache && (mainModule.moduleCache = {});
-  mainModule.paths = require("module")._nodeModulePaths(path.dirname(fs.realpathSync(options.filename)));
-  if (path.extname(mainModule.filename) !== ".six" || require.extensions) {
-    mainModule._compile(compile(code, options), mainModule.filename);
-  } else {
-    mainModule._compile(code, mainModule.filename);
-  }
-}
-function compile(src, options, callback) {
-  src = rewrite(src);
-  return src;
-}
-Object.define(exports, {
-  run: run,
-  compile: compile
-});};require["./browser"] = new function(){  var exports = this;  Six = require("./six");
+var dumpAst = require("./dumper").dumpAst;
+var run = exports.run = function (code, options) {
+    var mainModule = require.main;
+    if (!options)
+      options = {};
+    mainModule.filename = process.argv[1] = options.filename ? fs.realpathSync(options.filename) : ".";
+    mainModule.moduleCache && (mainModule.moduleCache = {});
+    mainModule.paths = require("module")._nodeModulePaths(path.dirname(fs.realpathSync(options.filename)));
+    if (path.extname(mainModule.filename) !== ".six" || require.extensions) {
+      mainModule._compile(compile(code, options), mainModule.filename);
+    } else {
+      mainModule._compile(code, mainModule.filename);
+    }
+  };
+var compile = exports.compile = function (src, options, callback) {
+    src = rewrite(src, options);
+    return src;
+  };
+var nodes = exports.nodes = function (src, options) {
+    return dumpAst(src, options.verbose);
+  };
+if (require && require.extensions) {
+  require.extensions[".six"] = function (module, filename) {
+    var content = compile(fs.readFileSync(filename, "utf8"));
+    return module._compile(content, filename);
+  };
+}      };          require["./browser"] =       new function(){        var exports = this;        var Six = require("./six");
 Six.require = require;
 Six.eval = function (code, options) {
   return eval(Six.compile(code, options));
 };
 Six.run = function (code, options) {
-  Function(Six.compile(code, options))();
+  Function(Six.compile(code, options || {global: true}))();
 };
 Six.load = function (url, callback) {
   var xhr = window.ActiveXObject ? new window.ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest();
@@ -7703,4 +8218,4 @@ var runScripts = function () {
 if (window.addEventListener)
   window.addEventListener("DOMContentLoaded", runScripts, false);
 else
-  window.attachEvent("onload", runScripts);};return require["./six"];}();if (typeof define === "function" && define.amd) {define(function() { return Six; });} else {global.Six = Six;}}(typeof global !== "undefined" ? global : this));
+  window.attachEvent("onload", runScripts);      };    return require["./six"];}();if (typeof define === "function" && define.amd) {define(function() { return Six; });} else {global.Six = Six;}}(typeof global !== "undefined" ? global : this));
