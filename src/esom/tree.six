@@ -9,14 +9,12 @@ class Tree {
     var ast = parse(source, { range: true, })
     var children = []
 
-    Object.define(this, {
-      root: this,
-      get source() { return source },
-      get ast() { return ast },
-      get children() {return children}
-    })
+    this.root = this
+    this.source = source
+    this.ast = ast
+    this.children = children
 
-     children.push(this.create({ ast, key: 'root', type: 'Node' }))
+    children.push(this.create({ ast, key: 'root', type: 'Node' }))
 
     var node = children[0]
     node.global = options && options.global
@@ -40,10 +38,11 @@ class Tree {
       }
     })
 
+    node.ast = base.ast
+    node.parent = parent
+    node.children = children
+
     Object.define(node, {
-      get ast() { return base.ast },
-      get parent() { return parent },
-      get children() { return children },
       unshift(node) { children.unshift(node) },
       push(node) { children.push(node) }
     })
