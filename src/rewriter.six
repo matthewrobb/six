@@ -58,21 +58,22 @@ class Context {
 
   constructor(node) {
     var stack = Object.create(node)
+    var parent
 
     Object.define(stack, node.ast)
     Object.define(stack, {
       node,
       get parent() {
-        if ( node.parent ) return node.parent.context()
+        parent ? parent : node.parent ? (parent = node.parent.context()) : undefined
       }
     })
 
     if (stack.hasOwnProperty("loc")) delete stack['loc']
 
     node.children.forEach(child => {
-      var ctx = child.context()
+      var ctx
       Object.defineProperty(stack, child.key, {
-        get() ctx,
+        get() ctx ? ctx : (ctx = child.context()),
         enumerable: true
       })
     })
