@@ -1,4 +1,3 @@
-var fs = require("fs")
 var path = require("path")
 var exec = require("child_process").exec
 
@@ -133,7 +132,7 @@ task("build:browser", () => {
   code += '}'
   code += '}(typeof global !== "undefined" ? global : this));'
 
-  fs.writeFileSync('extras/six.js', code)
+  writeFileSync('extras/six.js', code)
   console.log("built ...")
 
 })
