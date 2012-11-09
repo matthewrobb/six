@@ -67,11 +67,39 @@ var hooks = {
   },
 
   ".BinaryExpression[operator^='is']": node => {
-    node.compile = () => filters.egal(node)
+    node.compile = () => {
+      return `(${ node.ast.operator === "isnt" ? "!" : "" }function ( x, y ) {
+        return (x === y)?( x !== 0 || 1/x === 1/y ) : ( x !== x && y !==y )
+      }( ${ node.first().compile() }, ${ node.last().compile() } ))`
+    }
   },
 
   ".TemplateLiteral": node => {
-    node.compile = () => filters.quasi(node.context())
+    node.compile = () => {
+      var it = node.context()
+      var cooked = [], raw = []
+
+      it.quasis.node.children.forEach(child => {
+        raw.push(child.ast.value.raw)
+        cooked.push(child.ast.value.cooked)
+      })
+
+      return `(function(__quasi__){
+        var rawStrs = __quasi__['cooked'];
+        var out = [];
+        for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+          out[++k] = rawStrs[i];
+          out[++k] = arguments[++i];
+        }
+        return out.join('');
+      })(
+        ${ JSON.stringify({cooked:cooked, raw:raw}) }
+        ${it.expressions && it.expressions.node && it.expressions.node.children.length
+          ? "," + it.expressions.node.children.map(function(exp){return exp.compile()}).join(",")
+          : ""
+        }
+      )`
+    }
   }
 }
 
