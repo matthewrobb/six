@@ -24,6 +24,22 @@ export function rewrite(src, options) {
 
     sourceTree = new Tree( parse(src), options );
 
+    var { egal: expression } = parse("(function ( x, y ) { return (x === y)?( x !== 0 || 1/x === 1/y ) : ( x !== x && y !==y )})()").body[0];
+
+    var egaller = function(left, right) {
+        return {
+            type: egal.type,
+            arguments: [left, right],
+            callee: egal.callee
+        }
+    }
+
+    sourceTree.traverse(node => {
+        if( node.type === "BinaryExpression" && /^is/.test(node.operator) ) {
+            node.overload(egaller(node.left.toAST(), node.right.toAST()));
+        }
+    })
+
     result = esgen( sourceTree.toAST(), config );
 
     console.log(result)

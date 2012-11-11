@@ -1,12 +1,22 @@
 import isArray from Array;
 
+import push from Array.prototype;
+import slice from Array.prototype;
+import iterator from Array.prototype;
+import indexOf from Array.prototype;
+import forEach from Array.prototype;
+
 import keys from Object;
 import defineProperty from Object;
-
+import defineProperties from Object;
 
 class Tree {
     constructor(ast, options) {
         this.root = new Node( ast );
+    }
+    traverse(visitor) {
+        visitor.call(this.root, this.root);
+        this.root.traverse(visitor);
     }
     toAST() {
         return this.root.toAST();
@@ -14,21 +24,48 @@ class Tree {
 }
 
 class Node {
-    constructor( ast ) {
-        defineProperty(this, "children", { value: [] });
+    constructor( ast, opts ) {
+        opts || (opts = {});
 
+        defineProperties(this, {
+            children: { value: new NodeSet(null, { parent: this, key: "children" }) },
+            nodeType: { value: "Node" },
+            nodeKey: { value: opts.key || null },
+            parent: { value: opts.parent || null }
+        });
+
+        this.set(ast);
+    }
+    create( ast, opts ) {
+        return new ( isArray(ast) ? NodeSet : Node )( ast, opts )
+    }
+    clean() {
+        for( var { key } of this ) {
+            delete this[key];
+        }
+        this.children = new NodeSet(null, { parent: this, key: "children" });
+    }
+    set(ast) {
         for( var key of keys(ast) ) {
-            if( typeof ast[key] === "object" && key !== "range" ) {
-                this.append(
-                    this[key] = new ( isArray(ast[key]) ? NodeSet : Node )( ast[key] )
-                );
+            if( typeof ast[key] === "object" && key !== "range" && ast[key] !== null) {
+                this.append( this[key] = this.create(ast[key], { parent: this, key }) )
             } else {
                 this[key] = ast[key];
             }
         }
     }
+    overload(ast) {
+        this.clean();
+        this.set(ast);
+    }
     append( node ) {
-        this.children.push(node);
+        push.call(this.children, node);
+    }
+    traverse(visitor) {
+        for( var child of this.children ) {
+            visitor.call(child, child);
+            child.traverse(visitor);
+        }
     }
     iterator() {
         return {
@@ -51,14 +88,36 @@ class Node {
     }
 }
 
-class NodeSet extends Array {
-    constructor( items ) {
+class NodeSet extends Node {
+    constructor( items, opts ) {
+        opts || (opts = {});
+
+        defineProperties(this, {
+            nodeType: { value: "NodeSet" },
+            nodeKey: { value: opts.key || null },
+            parent: { value: opts.parent || null }
+        });
+
         this.length = 0;
-        items.forEach( item => this.push(item) );
+        items && items.forEach( item => push.call(this, this.create(item, { parent: this })) );
+    }
+    traverse(visitor) {
+        for( var child of this ) {
+            visitor.call(child, child);
+            child.traverse(visitor);
+        }
     }
     toAST() {
-        return this.slice();
+        return slice.call(this);
     }
 }
+
+defineProperties(NodeSet.prototype, {
+    iterator: { value: iterator },
+    push: { value: push },
+    slice: { value: slice },
+    forEach: { value: forEach },
+    indexOf: { value: indexOf }
+});
 
 export Tree;
