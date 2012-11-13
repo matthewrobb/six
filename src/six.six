@@ -2,7 +2,7 @@
 module fs = "fs"
 module path = "path"
 
-import rewrite from "./rewriter"
+import rewrite from "./core/rewriter"
 
 export function run (code, options) {
     var mainModule = require.main

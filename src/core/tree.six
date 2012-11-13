@@ -11,10 +11,10 @@ import defineProperty from Object;
 import defineProperties from Object;
 
 class Tree {
-    constructor(ast, options) {
+    constructor( ast, options ) {
         this.root = new Node( ast );
     }
-    traverse(visitor) {
+    traverse( visitor ) {
         visitor.call(this.root, this.root);
         this.root.traverse(visitor);
     }
@@ -45,23 +45,23 @@ class Node {
         }
         this.children = new NodeSet(null, { parent: this, key: "children" });
     }
-    set(ast) {
+    set( ast ) {
         for( var key of keys(ast) ) {
             if( typeof ast[key] === "object" && key !== "range" && ast[key] !== null) {
-                this.append( this[key] = this.create(ast[key], { parent: this, key }) )
+                this.append( this[key] = this.create(ast[key], { parent: this, key }) );
             } else {
                 this[key] = ast[key];
             }
         }
     }
-    overload(ast) {
+    overload( ast ) {
         this.clean();
         this.set(ast);
     }
     append( node ) {
         push.call(this.children, node);
     }
-    traverse(visitor) {
+    traverse( visitor ) {
         for( var child of this.children ) {
             visitor.call(child, child);
             child.traverse(visitor);
@@ -101,7 +101,7 @@ class NodeSet extends Node {
         this.length = 0;
         items && items.forEach( item => push.call(this, this.create(item, { parent: this })) );
     }
-    traverse(visitor) {
+    traverse( visitor ) {
         for( var child of this ) {
             visitor.call(child, child);
             child.traverse(visitor);

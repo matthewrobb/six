@@ -1,28 +1,10 @@
-require("./es6");
-
 module esprima = "esprima-six";
 
 import parse from esprima;
-import { generate: esgen } from "escodegen";
 
-import Tree from "./esom/tree";
+export var hooks = [];
 
-var config = {
-    format: {
-        indent: {
-            style: "    "
-        },
-        quotes: "double",
-        compact: false
-    },
-    comment: true
-};
-
-export function rewrite(src, options) {
-
-    var sourceTree, result;
-
-    sourceTree = new Tree( parse(src), options );
+hooks.push(tree => {
 
     var { egal: expression } = parse("(function ( x, y ) { return (x === y)?( x !== 0 || 1/x === 1/y ) : ( x !== x && y !==y )})()").body[0];
 
@@ -34,15 +16,10 @@ export function rewrite(src, options) {
         }
     }
 
-    sourceTree.traverse(node => {
+    tree.traverse(node => {
         if( node.type === "BinaryExpression" && /^is/.test(node.operator) ) {
             node.overload(egaller(node.left.toAST(), node.right.toAST()));
         }
-    })
+    });
 
-    result = esgen( sourceTree.toAST(), config );
-
-    console.log(result)
-
-    return result;
-}
+});
