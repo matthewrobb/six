@@ -20,8 +20,8 @@
     "url"             : "git://github.com/matthewrobb/six.git"
   },
   "dependencies": {
-    "esprima-six-jpike": "",
-    "escodegen": ""
+    "esprima-six-jpike": "1.1.1-dev-harmony",
+    "escodegen": "0.0.12"
   },
   "devDependencies" : {
     "mocha"  : "",
