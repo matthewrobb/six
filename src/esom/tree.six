@@ -1,4 +1,4 @@
-module esprima = "esprima-six";
+module esprima = "esprima-six-jpike";
 
 var parse = esprima.parse;
 var Syntax = esprima.Syntax;

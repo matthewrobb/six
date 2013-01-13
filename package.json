@@ -1,5 +1,5 @@
 {
-  "name"            : "six",
+  "name"            : "six-jpike",
   "description"     : "JavaScript you can bet on.",
   "keywords"        : ["javascript", "language", "six", "compiler"],
   "author"          : "Matthew Robb",
@@ -20,7 +20,7 @@
     "url"             : "git://github.com/matthewrobb/six.git"
   },
   "dependencies": {
-    "esprima-six": "",
+    "esprima-six-jpike": "",
     "escodegen": ""
   },
   "devDependencies" : {
