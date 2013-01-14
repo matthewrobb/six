@@ -3,7 +3,7 @@ module esprima = "esprima-six-jpike";
 var parse = esprima.parse;
 var Syntax = esprima.Syntax;
 
-class Tree {
+export class Tree {
 
   constructor(source, options) {
     var ast = parse(source, { range: true, })
@@ -89,5 +89,3 @@ Object.define(Tree, {
 })
 
 Object.define(Tree.prototype, require("./trav").Traversal)
-
-exports.Tree = Tree
