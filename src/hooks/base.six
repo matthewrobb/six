@@ -66,6 +66,14 @@ var hooks = {
     }
   },
 
+  ".Property[shorthand=true]": node => {
+    node.compile = () => {
+      var ctx = node.context()
+      var key = ctx.key.compile()
+      return `${key}:${key}`
+    }
+  },
+
   ".BinaryExpression[operator^='is']": node => {
     node.compile = () => {
       return `(${ node.ast.operator === "isnt" ? "!" : "" }function ( x, y ) {
