@@ -3,7 +3,7 @@
   "description"     : "JavaScript you can bet on.",
   "keywords"        : ["javascript", "language", "six", "compiler"],
   "author"          : "Matthew Robb",
-  "version"         : "0.0.14",
+  "version"         : "0.0.15",
   "licenses": [{
     "type"            : "MIT",
     "url"             : "https://raw.github.com/matthewrobb/six/master/LICENSE"

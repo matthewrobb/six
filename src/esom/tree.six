@@ -18,6 +18,7 @@ export class Tree {
 
     var node = children[0]
     node.global = options && options.global
+    node.strict = options && options.strict
     return node
   }
 

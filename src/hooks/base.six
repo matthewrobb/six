@@ -31,7 +31,11 @@ var hooks = {
         comment: true
       })
 
+      if (node.strict)
+        body = '  "use strict";\n' + body
+
       if (! node.global) {
+
         body =
           "if (typeof exports === 'object' && typeof define !== 'function') {\n" +
           "  var define = function (factory) {\n" +

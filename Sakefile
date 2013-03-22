@@ -15,7 +15,7 @@ var launch = (cmd, callback) => {
 }
 
 task('compile:six', () => {
-  launch('node bin/six -co ./lib ./src')
+  launch('node bin/six -Sco ./lib ./src')
 })
 
 task('watch:six', () => launch('node bin/six -cwo ./lib ./src'))
