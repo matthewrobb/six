@@ -7,6 +7,7 @@
 // External dependencies.
 module fs = "fs"
 module path = "path"
+module mkdirp = "mkdirp"
 module helpers = "./helpers"
 module optparse = "./optparse"
 module six = "./six"
@@ -340,7 +341,7 @@ var writeJs = function(source, js, base) {
   }
   exists(jsDir, function(itExists) {
     if (itExists) compile()
-    else exec("mkdir -p " + jsDir, compile)
+    else mkdirp(jsDir, compile)
   })
 }
 
