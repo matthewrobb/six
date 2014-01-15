@@ -107,7 +107,7 @@ six outputs [UMD](https://github.com/umdjs/umd) compatible modules allowing modu
 ##About
 The Six project is building on top of the work already being done by different individuals and groups around the web. Particularly influential is the amazing work done by [Ariya Hidayat](https://github.com/ariya) and collaborators on the ECMAScript parser [Esprima](http://esprima.org).
 
-The project was started out of a desire to build on the work done with the [Harmonizr](https://github.com/jdiamond/harmonizr) project by [Jason Diamond](https://github.com/jdiamond) and still borrows some of it's internals from that source.
+The project was started out of a desire to build on the work done with the [Harmonizr](https://github.com/jdiamond/harmonizr) project by [Jason Diamond](https://github.com/jdiamond) and still borrows some of its internals from that source.
 
 A good deal of the work being done on and around the general workflows and APIs has been modeled after the very successfull [CoffeeScript](http://coffeescript.or) project by [Jeremy Ashkenas](https://github.com/jashkenas).
 
