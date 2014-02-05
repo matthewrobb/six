@@ -20,55 +20,12 @@ task('compile:six', () => {
 
 task('watch:six', () => launch('node bin/six -cwo ./lib ./src'))
 
-var dot = require("dot")
-
-dot.templateSettings = {
-  evaluate:    /\{\{([\s\S]+?)\}\}/g,
-  interpolate: /\{\{=([\s\S]+?)\}\}/g,
-  encode:      /\{\{!([\s\S]+?)\}\}/g,
-  use:         /\{\{#([\s\S]+?)\}\}/g,
-  define:      /\{\{##\s*([\w\.$]+)\s*(\:|=)([\s\S]+?)#\}\}/g,
-  conditional: /\{\{\?(\?)?\s*([\s\S]*?)\s*\}\}/g,
-  iterate:     /\{\{~\s*(?:\}\}|([\s\S]+?)\s*\:\s*([\w$]+)\s*(?:\:\s*([\w$]+))?\s*\}\})/g,
-  varname: 'it',
-  strip: true,
-  append: true,
-  selfcontained: true
-}
-
-var filterPath = __dirname + "/src/filters/"
-var filterOut = __dirname + "/lib/filters/"
-
-task('compile:dot', () => {
-  readdirSync(filterPath).forEach(file => {
-    if (path.extname(file) === ".dot") {
-      var source = readFileSync(filterPath + file).toString()
-      source = "exports.filter = " + dot.template(source).toString()
-      writeFileSync(filterOut + file.replace(".dot", ".js"), source, 'utf8')
-    }
-  })
-})
-
-task('watch:dot', () => {
-  watch(filterPath, (event, filename) => invoke("compile:dot"))
-})
-
 task('compile', () => {
   invoke('compile:six')
-  invoke('compile:dot')
 })
 
 task('watch', () => {
   invoke('watch:six')
-  invoke('watch:dot')
-})
-
-var Six = require("./lib/six")
-
-task("build:browserrr", () => {
-  
-  console.log(Six.compile(readFileSync("./src/six.six").toString(), {global:true}))
-
 })
 
 import compile from "./lib/six"

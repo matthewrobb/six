@@ -1,0 +1,31 @@
+require("./es6");
+
+module esprima = "esprima-six";
+
+import parse from esprima;
+import { generate: esgen } from "escodegen";
+
+import Tree from "./tree";
+
+import hooks from "./hooks";
+
+export var config = {
+    format: {
+        indent: {
+            style: "    "
+        },
+        quotes: "double",
+        compact: false
+    },
+    comment: true
+};
+
+export function rewrite(src, options) {
+    var sourceTree = new Tree( parse(src), options );
+
+    for( var hook of hooks ) {
+        hook(sourceTree, options);
+    }
+
+    return esgen( sourceTree.toAST(), config );
+}

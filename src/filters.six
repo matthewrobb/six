@@ -1,3 +1,0 @@
-export var filters = {
-  'class': require("./filters/class").filter,
-}

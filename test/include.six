@@ -1,7 +1,0 @@
-var expect = require("chai").expect;
-var six = require('../lib/six'); // this require enables the .six file extension
-
-describe('node six file extension include', function() {
-  var mod = require('./inc/mod')
-  expect(mod.number()).to.equal(420)
-})
