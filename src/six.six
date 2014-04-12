@@ -28,18 +28,13 @@ exports.compile = compile;
 function compile (src, options, callback) {
     
 
-    /*options.macros = [
+    options.macros = [
         "fat-arrow-fn",
         "var-destructuring",
         "for-of"
     ];
     
-    try {
-    var tmp = expand(src, options);
-    } catch(e) {
-        console.log(src);
-        throw e;
-    }*/
+    src = expand(src, options);
 
     src = rewrite(src, options);
     

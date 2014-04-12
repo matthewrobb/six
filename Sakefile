@@ -18,7 +18,7 @@ task('compile:six', () => {
   launch('node bin/six -Sco ./lib ./src')
 })
 
-task('watch:six', () => launch('node bin/six -cwo ./lib ./src'))
+task('watch:six', () => launch('node bin/six -Scwo ./lib ./src'))
 
 var dot = require("dot")
 

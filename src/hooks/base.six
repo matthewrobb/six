@@ -119,8 +119,8 @@ Array.prototype.map.call([
 
   hooks,
   "./classes",
-  "./forof",
-  "./objectpattern",
+  // "./forof",
+  // "./objectpattern",
   "./modules",
   "./restparams"
 

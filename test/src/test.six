@@ -1,3 +1,7 @@
-var x = { foo : "bar", what : "up" };
+var x = { foo : "bar", what : "upBRO" };
 
 var { foo } = x;
+
+var list = [1,2,3];
+
+console.log(list.map( i => i * i ));
