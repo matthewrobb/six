@@ -1,0 +1,56 @@
+import filters from "../filters"
+
+function ClassRewrite(node) {
+  var ctx = node.context()
+  var constructor
+  var methods = []
+
+  if ( ctx.body && ctx.body.body && ctx.body.body.node ) {
+    ctx.body.body.node.children.forEach(child => {
+      var sub = child.context()
+      if ( sub.key.node.matches(".Identifier[name='constructor']") ) constructor = sub
+      else methods.push(sub)
+    })
+  }
+
+  ctx.constructor = constructor
+  ctx.methods = methods
+
+  return filters.class(ctx)
+}
+
+Object.define(exports, {
+
+  ".ClassDeclaration": node => {
+    node.compile = () => ClassRewrite(node)
+  },
+
+  ".ClassExpression": node => {
+    node.compile = () => ClassRewrite(node)
+  },
+
+  ".CallExpression > .MemberExpression > .Identifier[name='super']": node => {
+    var Call = node.closest(".CallExpression").context()
+    var callee = Call.callee
+    var args = Call.arguments
+
+    if (args && args.compile){
+      var argsc = args = args.compile()
+    }
+
+    node.compile = () => "this.constructor.__super__"
+    callee.property.node.compile = () => callee.property.name + ".call"
+    if (args && args.node) args.node.compile = () => `this${ args.node ? "," + argsc : "" }`
+  },
+
+  ".CallExpression > callee[name='super']": node => {
+    var Call = node.parent.context()
+    var args = Call.arguments
+    if(args && args.compile){
+      args = args.compile()
+    }
+    
+    Call.node.compile = () => `this.constructor.__super__.constructor.call(this ${ args.node ? "," + args:"" })`
+  }
+
+})

@@ -1,0 +1,124 @@
+import generate from "escodegen"
+import filters from "../filters"
+
+function iterator() {
+  return {
+    elements: Object.keys(this).map(key => ({ key, value: this[key] })),
+    index: 0,
+    next() {
+      if (this.index >= this.elements.length)
+        throw StopIteration
+      return this.elements[this.index++]
+    }
+  }
+}
+
+var hooks = {
+
+  ".Program": node => {
+    var compile = node.compile
+    node.compile = () => {
+      var src = compile.call(node)
+      var body = generate(node.constructor.create(src).ast, {
+        format: {
+          indent: {
+            style: '  ',
+            base: node.global ? 0 : 1
+          },
+          quotes: "double",
+          compact: false
+        },
+        comment: true
+      })
+
+      if (! node.global) {
+        body =
+          "if (typeof exports === 'object' && typeof define !== 'function') {\n" +
+          "  var define = function (factory) {\n" +
+          "    factory(require, exports);\n" +
+          "  };\n" +
+          "}\n" +
+          "define(function (require, exports) {\n" + body + "\n});"
+      }
+
+      return body
+    }
+  },
+
+  ".ArrowFunctionExpression": node => {
+    node.compile = ()=> {
+      var ctx = node.context()
+      var params = ctx.params.compile ? ctx.params.compile() : ""
+      var body = ctx.body.compile(), body = ctx.expression ? `{return ${body}}` : body
+      return `function(${params})${body}.bind(this)`
+    }
+  },
+
+  ".Property[method=true]": node => {
+    node.compile = () => {
+      var ctx = node.context()
+      var key = ctx.key.compile()
+      var value = ctx.value
+      var params = value.params && value.params.compile ? value.params.compile() : ""
+      var body = value.body.compile(), body = value.expression ? `{return ${body}}`: body
+
+      return `${key}:function(${params})${body}`
+    }
+  },
+
+  ".BinaryExpression[operator^='is']": node => {
+    node.compile = () => {
+      return `(${ node.ast.operator === "isnt" ? "!" : "" }function ( x, y ) {
+        return (x === y)?( x !== 0 || 1/x === 1/y ) : ( x !== x && y !==y )
+      }( ${ node.first().compile() }, ${ node.last().compile() } ))`
+    }
+  },
+
+  ".TemplateLiteral": node => {
+    node.compile = () => {
+      var it = node.context()
+      var cooked = [], raw = []
+
+      it.quasis.node.children.forEach(child => {
+        raw.push(child.ast.value.raw)
+        cooked.push(child.ast.value.cooked)
+      })
+
+      return `(function(__quasi__){
+        var rawStrs = __quasi__['cooked'];
+        var out = [];
+        for (var i = 0, k = -1, n = rawStrs.length; i < n;) {
+          out[++k] = rawStrs[i];
+          out[++k] = arguments[++i];
+        }
+        return out.join('');
+      })(
+        ${ JSON.stringify({cooked:cooked, raw:raw}) }
+        ${it.expressions && it.expressions.node && it.expressions.node.children.length
+          ? "," + it.expressions.node.children.map(function(exp){return exp.compile()}).join(",")
+          : ""
+        }
+      )`
+    }
+  }
+}
+
+Array.prototype.map.call([
+
+  hooks,
+  "./classes",
+  "./forof",
+  "./objectpattern",
+  "./modules",
+  "./restparams"
+
+],
+
+hook => {
+  Object.define(exports, typeof hook === "string" ? require(hook) : hook ) 
+})
+
+Object.defineProperty(exports, "iterator", {
+  value: iterator,
+  enumerable: false
+})

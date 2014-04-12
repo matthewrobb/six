@@ -1,0 +1,15 @@
+import Tree from "./esom/tree"
+
+export function dumpAst(src, includeRanges) {
+  var program = Tree.create(src)
+
+  if (! includeRanges) {
+    var delRange = (node) => {
+      delete node.ast.range
+      node.children.forEach(delRange)
+    }
+    delRange(program.root)
+  }
+
+  return JSON.stringify(program.ast, null, 2)
+}

@@ -1,0 +1,38 @@
+
+module fs = "fs"
+module path = "path"
+
+import rewrite from "./rewriter"
+import dumpAst from "./dumper"
+
+export function run (code, options) {
+  var mainModule = require.main
+
+  if(!options) options = {}
+
+  mainModule.filename = process.argv[1] = options.filename ? fs.realpathSync(options.filename) : '.'
+  mainModule.moduleCache && (mainModule.moduleCache = {})
+  mainModule.paths = require('module')._nodeModulePaths(path.dirname(fs.realpathSync(options.filename)))
+
+  if (path.extname(mainModule.filename) !== '.six' || require.extensions) {
+    mainModule._compile(compile(code, options), mainModule.filename)
+  } else {
+    mainModule._compile(code, mainModule.filename)
+  }
+}
+
+export function compile (src, options, callback) {
+  src = rewrite(src, options)
+  return src
+}
+
+export function nodes (src, options) {
+  return dumpAst(src, options.verbose)
+}
+// Register .six exension with node
+if (require && require.extensions) {
+  require.extensions['.six'] = function(module, filename) {
+    var content = compile(fs.readFileSync(filename, 'utf8'));
+    return module._compile(content, filename);
+  };
+}

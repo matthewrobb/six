@@ -1,4 +1,4 @@
-/*global.StopIteration = {}
+global.StopIteration = {}
 
 // Object static extensions
 Object.defineProperties(global.Object, {
@@ -27,4 +27,4 @@ Array.prototype.iterator = function() {
       return this.elements[this.index++]
     }
   }
-}*/
+}
