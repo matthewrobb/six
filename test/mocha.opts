@@ -1,4 +1,0 @@
---ui bdd
---require should
---require chai
---growl

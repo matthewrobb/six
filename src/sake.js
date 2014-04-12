@@ -7,11 +7,11 @@
 // current directory's Sakefile.
 
 // External dependencies.
-module fs = 'fs'
-module path = 'path'
-module helpers = './helpers'
-module optparse = './optparse'
-module Six = './six'
+var fs = require('fs');
+var path = require('path');
+var helpers = require('./helpers');
+var optparse = require('./optparse');
+var Six = require('./six');
 
 var existsSync = fs.existsSync || path.existsSync
 
@@ -20,7 +20,7 @@ var tasks = {}
 var options = {}
 var switches = []
 var oparse = null
-
+/*
 // Mixin the top-level Sake functions for Sakefiles to use directly.
 helpers.extend(global, {
 
@@ -103,4 +103,4 @@ var sakefileDirectory = function(dir) {
   var parent = path.normalize(path.join(dir), '..')
   if (parent !== dir) return sakefileDirectory(parent)
   throw new Error("Sakefile not found in " + process.cwd())
-}
+}*/

@@ -5,13 +5,16 @@
 // interactive REPL.
 
 // External dependencies.
-module fs = "fs"
-module path = "path"
-module helpers = "./helpers"
-module optparse = "./optparse"
-module six = "./six"
-import {spawn, exec} from "child_process"
-import EventEmitter from "events"
+var fs = require("fs");
+var path = require("path");
+var helpers = require("./helpers");
+var optparse = require("./optparse");
+var six = require("./six");
+var child_process = require("child_process"),
+    spawn = child_process.spawn,
+    exec = child_process.exec;
+
+var EventEmitter = require("events").EventEmitter;
 
 var exists = fs.exists || path.exists
 
@@ -56,7 +59,7 @@ var optionParser = null
 // Run `six` by parsing passed options and determining what action to take.
 // Many flags cause us to divert before compiling anything. Flags passed after
 // `--` will be passed verbatim to your script as arguments in `process.argv`
-export function run() {
+exports.run = function run() {
   parseOptions()
   if ( opts.nodejs ) return forkNode()
   if ( opts.help ) return usage()
@@ -151,7 +154,7 @@ var compilePath = function(source, topLevel, base) {
 // `__dirname` and `module.filename` to be correct relative to the script's path.
 var compileScript = function(file, input, base) {
   var o = opts
-  var options = compileOptions(file)
+  var options = compileOptions(file);
   try {
 
     t = task = {
@@ -332,7 +335,7 @@ var writeJs = function(source, js, base) {
   var jsDir  = path.dirname(jsPath)
 
   var compile = function(){
-    if (js.length <= 0) js = ' '
+    if (js && js.length <= 0) js = ' ';
     fs.writeFile(jsPath, js, function(err) {
       if (err) printLine(err.message)
       else if (opts.compile && opts.watch) timeLog("compiled " + source)

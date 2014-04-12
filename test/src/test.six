@@ -1,0 +1,3 @@
+var x = { foo : "bar", what : "up" };
+
+var { foo } = x;
