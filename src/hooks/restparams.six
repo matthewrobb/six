@@ -1,24 +1,16 @@
 var hooks = {
   ".FunctionDeclaration": node => {
     var ctx  = node.context()
-    if (! ctx.params.node)
+    if (! ctx.rest)
       return
-    var params = ctx.params.node.children
 
-    var lastIdx   = params.length - 1
-    var lastParam = params[lastIdx]
+    var paramsLength = ctx.params.node ? ctx.params.node.children.length : 0
+    var restParamName = ctx.rest.name
 
-    if (lastParam.ast.type === 'RestParameter') {
-      var restParamName = lastParam.ast.value.name
-      params.pop()
-
-      ctx.params.node.compile = () => params.map(p => p.context().name).join(', ')
-
-      ctx.body.body.unshift({
-        raw() "",
-        compile() `var ${restParamName} = [].slice.call(arguments, ${lastIdx});`
-      })
-    }
+    ctx.body.body.unshift({
+      raw() "",
+      compile() `var ${restParamName} = [].slice.call(arguments, ${paramsLength});`
+    })
   }
 }
 

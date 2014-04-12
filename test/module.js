@@ -73,4 +73,10 @@ describe('import statement', function() {
     expect(exports.lovely).to.equal('kitten')
     exports = {}
   })
+
+  it("export a class", function(){
+    var src = "export class Friend {}"
+    eval(six.compile(src))
+    expect(exports.Friend).to.not.be.undefined
+  })
 });
