@@ -31,7 +31,11 @@ var hooks = {
         comment: true
       })
 
+      if (node.strict)
+        body = '  "use strict";\n' + body
+
       if (! node.global) {
+
         body =
           "if (typeof exports === 'object' && typeof define !== 'function') {\n" +
           "  var define = function (factory) {\n" +
@@ -63,6 +67,14 @@ var hooks = {
       var body = value.body.compile(), body = value.expression ? `{return ${body}}`: body
 
       return `${key}:function(${params})${body}`
+    }
+  },
+
+  ".Property[shorthand=true]": node => {
+    node.compile = () => {
+      var ctx = node.context()
+      var key = ctx.key.compile()
+      return `${key}:${key}`
     }
   },
 
