@@ -39,6 +39,7 @@ var SWITCHES = [
   ['-p', '--print', 'print out the compiled JavaScript'],
   ['-r', '--require [FILE*]', 'require a library before executing your script'],
   ['-s', '--stdio', 'listen for and compile scripts over stdio'],
+  ['-S', '--strict', 'use strict mode inside of modules'],
   ['-t', '--tokens', 'print out the tokens that the lexer/rewriter produce'],
   ['-v', '--version', 'display the version number'],
   ['-V', '--verbose', 'increase verbosity'],
@@ -149,6 +150,7 @@ var compilePath = function(source, topLevel, base) {
 // Compile a single source script, containing the given code, according to the
 // requested options. If evaluating the script directly sets `__filename`,
 // `__dirname` and `module.filename` to be correct relative to the script's path.
+var t, task
 var compileScript = function(file, input, base) {
   var o = opts
   var options = compileOptions(file)
@@ -371,7 +373,8 @@ var compileOptions = function(filename) {
     bare: opts.bare,
     header: opts.compile,
     verbose: opts.verbose,
-    global: opts.global
+    global: opts.global,
+    strict: opts.strict
   }
 }
 
