@@ -1,38 +1,59 @@
 
-module fs = "fs"
-module path = "path"
+var fs = require("fs");
+var path = require("path");
 
-import rewrite from "./rewriter"
-import dumpAst from "./dumper"
+var rewrite = require("./rewriter").rewrite;
+var dumpAst = require("./dumper").dumpAst;
 
-export function run (code, options) {
-  var mainModule = require.main
+var expand = require("./macro").expand;
 
-  if(!options) options = {}
+exports.run = run;
+function run (code, options) {
+    var mainModule = require.main;
 
-  mainModule.filename = process.argv[1] = options.filename ? fs.realpathSync(options.filename) : '.'
-  mainModule.moduleCache && (mainModule.moduleCache = {})
-  mainModule.paths = require('module')._nodeModulePaths(path.dirname(fs.realpathSync(options.filename)))
+    if(!options) options = {};
 
-  if (path.extname(mainModule.filename) !== '.six' || require.extensions) {
-    mainModule._compile(compile(code, options), mainModule.filename)
-  } else {
-    mainModule._compile(code, mainModule.filename)
-  }
+    mainModule.filename = process.argv[1] = options.filename ? fs.realpathSync(options.filename) : '.';
+    mainModule.moduleCache && (mainModule.moduleCache = {});
+    mainModule.paths = require('module')._nodeModulePaths(path.dirname(fs.realpathSync(options.filename)));
+
+    if (path.extname(mainModule.filename) !== '.six' || require.extensions) {
+        mainModule._compile(compile(code, options), mainModule.filename);
+    } else {
+        mainModule._compile(code, mainModule.filename);
+    }
 }
 
-export function compile (src, options, callback) {
-  src = rewrite(src, options)
-  return src
+exports.compile = compile;
+function compile (src, options, callback) {
+    
+
+    /*options.macros = [
+        "fat-arrow-fn",
+        "var-destructuring",
+        "for-of"
+    ];
+    
+    try {
+    var tmp = expand(src, options);
+    } catch(e) {
+        console.log(src);
+        throw e;
+    }*/
+
+    src = rewrite(src, options);
+    
+    return src
 }
 
-export function nodes (src, options) {
-  return dumpAst(src, options.verbose)
+exports.nodes = nodes;
+function nodes (src, options) {
+    return dumpAst(src, options.verbose);
 }
 // Register .six exension with node
 if (require && require.extensions) {
-  require.extensions['.six'] = function(module, filename) {
-    var content = compile(fs.readFileSync(filename, 'utf8'));
-    return module._compile(content, filename);
-  };
+    require.extensions['.six'] = function(module, filename) {
+        var content = compile(fs.readFileSync(filename, 'utf8'));
+        return module._compile(content, filename);
+    };
 }

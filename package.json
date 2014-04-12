@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "esprima-six-jpike": "1.1.1-dev-harmony",
-    "escodegen": "0.0.15"
+    "escodegen": "0.0.15",
+    "sweet.js": "~0.5.0"
   },
   "devDependencies" : {
     "mocha"  : "",

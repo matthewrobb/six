@@ -1,0 +1,20 @@
+module path = "path";
+module sweet = "sweet.js";
+
+export var macros = {};
+
+export function require(name) {
+    if(!(name in macros)) {
+        macros[name] = sweet.loadNodeModule(path.dirname(module.filename), "./macros/" + name + ".sjs");
+    }
+
+    return macros[name];
+}
+
+export function expand (src, options) {
+    return sweet.compile(src, {
+        filename      : options.filename,
+        readableNames : true,
+        modules       : (options.macros || []).map(require)
+    }).code;
+}
