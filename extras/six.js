@@ -1,4 +1,4 @@
-(function(global) {var Six = function() {function require(path){ return require[path] || {}; }      require["esprima-six"] =       new function(){        var exports = this;        /*
+(function(global) {var Six = function() {function require(path){ return require[path] || {}; }      require["esprima-six-jpike"] =       new function(){        var exports = this;        /*
   Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
   Copyright (C) 2012 Mathias Bynens <mathias@qiwi.be>
   Copyright (C) 2012 Joost-Wim Boekesteijn <joost-wim@boekesteijn.nl>

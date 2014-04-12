@@ -111,11 +111,14 @@ var hooks = {
               return `var ${name} = exports.${name} = require("${modRoot}");`
             }
             else {
-              var modRoot = fromcompile()
+              var modRoot = from.compile()
               return `var ${name} = exports.${name} = ${modRoot};`
             }
           }
-          // TODO
+        case "ClassDeclaration":
+          var name = exportee.id.compile()
+          exportee.node.ast.type = "ClassExpression"
+          return `var ${name} = exports.${name} = ${exportee.compile()}`
         default:
           // should be unreachable but fallthrough in case the standard changes
           return ctx.declaration.compile()
